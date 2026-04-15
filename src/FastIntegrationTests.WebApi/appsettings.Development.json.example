@@ -1,0 +1,7 @@
+{
+  "DatabaseProvider": "PostgreSQL",
+  "ConnectionStrings": {
+    "PostgreSQL": "Host=localhost;Database=shop;Username=<user>;Password=<password>",
+    "MSSQL": "Server=localhost,1433;Database=shop;User Id=<user>;Password=<password>;TrustServerCertificate=true"
+  }
+}

@@ -22,9 +22,9 @@ var provider = builder.Configuration["DatabaseProvider"]
 var connStr = builder.Configuration.GetConnectionString(provider)
     ?? throw new InvalidOperationException($"Строка подключения '{provider}' не задана.");
 
-if (provider == "PostgreSQL")
+if (provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddPostgresql(connStr);
-else if (provider == "MSSQL")
+else if (provider.Equals("MSSQL", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddMssql(connStr);
 else
     throw new InvalidOperationException(
@@ -38,6 +38,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
 app.UseExceptionHandler();
 app.MapControllers();
 app.Run();
