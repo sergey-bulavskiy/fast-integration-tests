@@ -1,1 +1,0 @@
-namespace FastIntegrationTests.Application.Interfaces;
