@@ -3,7 +3,7 @@ namespace FastIntegrationTests.Application.Services;
 /// <summary>
 /// Сервис для управления товарами каталога.
 /// </summary>
-public class ProductService
+public class ProductService : IProductService
 {
     private readonly IProductRepository _repository;
 

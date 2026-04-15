@@ -7,8 +7,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Регистрируем сервисы бизнес-логики
-builder.Services.AddScoped<ProductService>();
-builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 // Регистрируем глобальный обработчик исключений
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

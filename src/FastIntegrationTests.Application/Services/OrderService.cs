@@ -3,7 +3,7 @@ namespace FastIntegrationTests.Application.Services;
 /// <summary>
 /// Сервис для управления заказами и их жизненным циклом.
 /// </summary>
-public class OrderService
+public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;

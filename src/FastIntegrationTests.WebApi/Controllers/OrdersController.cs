@@ -7,13 +7,13 @@ namespace FastIntegrationTests.WebApi.Controllers;
 [Route("api/[controller]")]
 public class OrdersController : ControllerBase
 {
-    private readonly OrderService _orderService;
+    private readonly IOrderService _orderService;
 
     /// <summary>
     /// Создаёт новый экземпляр <see cref="OrdersController"/>.
     /// </summary>
     /// <param name="orderService">Сервис управления заказами.</param>
-    public OrdersController(OrderService orderService)
+    public OrdersController(IOrderService orderService)
     {
         _orderService = orderService;
     }
@@ -36,6 +36,7 @@ public class OrdersController : ControllerBase
     /// <summary>
     /// Создаёт новый заказ.
     /// </summary>
+    /// <param name="request">Данные для создания заказа.</param>
     [HttpPost]
     public async Task<ActionResult<OrderDto>> Create(CreateOrderRequest request, CancellationToken ct)
     {

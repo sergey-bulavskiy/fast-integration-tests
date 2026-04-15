@@ -7,13 +7,13 @@ namespace FastIntegrationTests.WebApi.Controllers;
 [Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
-    private readonly ProductService _productService;
+    private readonly IProductService _productService;
 
     /// <summary>
     /// Создаёт новый экземпляр <see cref="ProductsController"/>.
     /// </summary>
     /// <param name="productService">Сервис управления товарами.</param>
-    public ProductsController(ProductService productService)
+    public ProductsController(IProductService productService)
     {
         _productService = productService;
     }
@@ -36,6 +36,7 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Создаёт новый товар.
     /// </summary>
+    /// <param name="request">Данные для создания товара.</param>
     [HttpPost]
     public async Task<ActionResult<ProductDto>> Create(CreateProductRequest request, CancellationToken ct)
     {
