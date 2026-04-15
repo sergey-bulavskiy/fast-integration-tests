@@ -1,0 +1,6 @@
+@FastIntegrationTests.WebApi_HostAddress = http://localhost:5050
+
+GET {{FastIntegrationTests.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

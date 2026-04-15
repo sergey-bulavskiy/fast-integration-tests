@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FastIntegrationTests.Application/FastIntegrationTests.Application.csproj" />
+    <Project Path="src/FastIntegrationTests.Infrastructure/FastIntegrationTests.Infrastructure.csproj" />
+    <Project Path="src/FastIntegrationTests.WebApi/FastIntegrationTests.WebApi.csproj" />
+  </Folder>
+</Solution>
