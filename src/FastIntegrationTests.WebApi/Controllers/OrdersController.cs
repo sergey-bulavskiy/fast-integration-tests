@@ -21,6 +21,7 @@ public class OrdersController : ControllerBase
     /// <summary>
     /// Возвращает список всех заказов.
     /// </summary>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<OrderDto>>> GetAll(CancellationToken ct)
         => Ok(await _orderService.GetAllAsync(ct));
@@ -29,6 +30,7 @@ public class OrdersController : ControllerBase
     /// Возвращает заказ с позициями по идентификатору.
     /// </summary>
     /// <param name="id">Идентификатор заказа.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpGet("{id:int}")]
     public async Task<ActionResult<OrderDto>> GetById(int id, CancellationToken ct)
         => Ok(await _orderService.GetByIdAsync(id, ct));
@@ -37,6 +39,7 @@ public class OrdersController : ControllerBase
     /// Создаёт новый заказ.
     /// </summary>
     /// <param name="request">Данные для создания заказа.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpPost]
     public async Task<ActionResult<OrderDto>> Create(CreateOrderRequest request, CancellationToken ct)
     {
@@ -48,6 +51,7 @@ public class OrdersController : ControllerBase
     /// Подтверждает заказ (New → Confirmed).
     /// </summary>
     /// <param name="id">Идентификатор заказа.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpPost("{id:int}/confirm")]
     public async Task<ActionResult<OrderDto>> Confirm(int id, CancellationToken ct)
         => Ok(await _orderService.ConfirmAsync(id, ct));
@@ -56,6 +60,7 @@ public class OrdersController : ControllerBase
     /// Передаёт заказ в доставку (Confirmed → Shipped).
     /// </summary>
     /// <param name="id">Идентификатор заказа.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpPost("{id:int}/ship")]
     public async Task<ActionResult<OrderDto>> Ship(int id, CancellationToken ct)
         => Ok(await _orderService.ShipAsync(id, ct));
@@ -64,6 +69,7 @@ public class OrdersController : ControllerBase
     /// Завершает заказ (Shipped → Completed).
     /// </summary>
     /// <param name="id">Идентификатор заказа.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpPost("{id:int}/complete")]
     public async Task<ActionResult<OrderDto>> Complete(int id, CancellationToken ct)
         => Ok(await _orderService.CompleteAsync(id, ct));
@@ -72,6 +78,7 @@ public class OrdersController : ControllerBase
     /// Отменяет заказ (New/Confirmed → Cancelled).
     /// </summary>
     /// <param name="id">Идентификатор заказа.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpPost("{id:int}/cancel")]
     public async Task<ActionResult<OrderDto>> Cancel(int id, CancellationToken ct)
         => Ok(await _orderService.CancelAsync(id, ct));

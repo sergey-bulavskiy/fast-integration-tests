@@ -21,6 +21,7 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Возвращает список всех товаров.
     /// </summary>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ProductDto>>> GetAll(CancellationToken ct)
         => Ok(await _productService.GetAllAsync(ct));
@@ -29,6 +30,7 @@ public class ProductsController : ControllerBase
     /// Возвращает товар по идентификатору.
     /// </summary>
     /// <param name="id">Идентификатор товара.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProductDto>> GetById(int id, CancellationToken ct)
         => Ok(await _productService.GetByIdAsync(id, ct));
@@ -37,6 +39,7 @@ public class ProductsController : ControllerBase
     /// Создаёт новый товар.
     /// </summary>
     /// <param name="request">Данные для создания товара.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpPost]
     public async Task<ActionResult<ProductDto>> Create(CreateProductRequest request, CancellationToken ct)
     {
@@ -48,6 +51,7 @@ public class ProductsController : ControllerBase
     /// Обновляет существующий товар.
     /// </summary>
     /// <param name="id">Идентификатор товара.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpPut("{id:int}")]
     public async Task<ActionResult<ProductDto>> Update(
         int id,
@@ -59,6 +63,7 @@ public class ProductsController : ControllerBase
     /// Удаляет товар по идентификатору.
     /// </summary>
     /// <param name="id">Идентификатор товара.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
