@@ -1,25 +1,43 @@
+using FastIntegrationTests.WebApi.Middleware;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Регистрируем сервисы бизнес-логики
+builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<OrderService>();
+
+// Регистрируем глобальный обработчик исключений
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// Учебный проект: предполагаем, что все миграции используют только EF Core Fluent API
+// без raw SQL, поэтому один набор миграций совместим с обоими провайдерами.
+// В production-проекте при наличии raw SQL миграции пришлось бы разделять по провайдерам.
+var provider = builder.Configuration["DatabaseProvider"]
+    ?? throw new InvalidOperationException("Конфигурация 'DatabaseProvider' не задана.");
+var connStr = builder.Configuration.GetConnectionString(provider)
+    ?? throw new InvalidOperationException($"Строка подключения '{provider}' не задана.");
+
+if (provider == "PostgreSQL")
+    builder.Services.AddPostgresql(connStr);
+else if (provider == "MSSQL")
+    builder.Services.AddMssql(connStr);
+else
+    throw new InvalidOperationException(
+        $"Неизвестный провайдер БД: '{provider}'. Допустимые значения: 'PostgreSQL', 'MSSQL'.");
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
+app.UseExceptionHandler();
 app.MapControllers();
-
 app.Run();
