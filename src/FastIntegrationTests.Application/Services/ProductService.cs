@@ -19,6 +19,7 @@ public class ProductService
     /// <summary>
     /// Возвращает список всех товаров.
     /// </summary>
+    /// <param name="ct">Токен отмены операции.</param>
     public async Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken ct = default)
     {
         var products = await _repository.GetAllAsync(ct);
@@ -29,6 +30,7 @@ public class ProductService
     /// Возвращает товар по идентификатору.
     /// </summary>
     /// <param name="id">Идентификатор товара.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     /// <exception cref="NotFoundException">Если товар не найден.</exception>
     public async Task<ProductDto> GetByIdAsync(int id, CancellationToken ct = default)
     {
@@ -41,6 +43,7 @@ public class ProductService
     /// Создаёт новый товар.
     /// </summary>
     /// <param name="request">Данные нового товара.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     public async Task<ProductDto> CreateAsync(CreateProductRequest request, CancellationToken ct = default)
     {
         var product = new Product
@@ -59,6 +62,7 @@ public class ProductService
     /// </summary>
     /// <param name="id">Идентификатор товара.</param>
     /// <param name="request">Новые данные товара.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     /// <exception cref="NotFoundException">Если товар не найден.</exception>
     public async Task<ProductDto> UpdateAsync(int id, UpdateProductRequest request, CancellationToken ct = default)
     {
@@ -77,6 +81,7 @@ public class ProductService
     /// Удаляет товар по идентификатору.
     /// </summary>
     /// <param name="id">Идентификатор товара.</param>
+    /// <param name="ct">Токен отмены операции.</param>
     /// <exception cref="NotFoundException">Если товар не найден.</exception>
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
