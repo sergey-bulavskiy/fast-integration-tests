@@ -36,13 +36,17 @@ dotnet ef database update \
 
 Трёхслойная архитектура:
 
-- **Application** — доменные сущности (`Entities/`), DTO (`DTOs/`), интерфейсы репозиториев и сервисов (`Interfaces/`), сервисы бизнес-логики (`Services/`), доменные исключения (`Exceptions/`). Не зависит от EF Core и конкретной СУБД.
+- **Application** — доменные сущности (`Entities/`), перечисления (`Enums/`), DTO (`DTOs/`), интерфейсы репозиториев и сервисов (`Interfaces/`), сервисы бизнес-логики (`Services/`), доменные исключения (`Exceptions/`). Не зависит от EF Core и конкретной СУБД.
 - **Infrastructure** — реализация репозиториев через EF Core (`Repositories/`), `ShopDbContext` с конфигурациями (`Data/`), extension-методы регистрации DI (`Extensions/ServiceCollectionExtensions.cs`).
 - **WebApi** — контроллеры (`Controllers/`), `Program.cs` с DI-конфигурацией, глобальная обработка ошибок (`Middleware/GlobalExceptionHandler.cs`).
 
 ## Переключение провайдера БД
 
-В `appsettings.Development.json` изменить `"DatabaseProvider"` на `"PostgreSQL"` или `"MSSQL"`. Строки подключения хранятся там же. Оба docker-сервиса объявлены в `docker-compose.yml`.
+Файл `appsettings.Development.json` не хранится в репозитории. После клонирования скопировать шаблон:
+```bash
+cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/FastIntegrationTests.WebApi/appsettings.Development.json
+```
+Затем в скопированном файле изменить `"DatabaseProvider"` на `"PostgreSQL"` или `"MSSQL"` и заполнить строки подключения. Оба docker-сервиса объявлены в `docker-compose.yml`.
 
 ## Соглашения
 
