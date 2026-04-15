@@ -484,3 +484,6 @@ $RECYCLE.BIN/
 # Локальные конфигурации с секретами
 appsettings.Development.json
 appsettings.*.local.json
+
+# Claude Code local settings
+.claude/
