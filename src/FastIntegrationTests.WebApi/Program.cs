@@ -42,3 +42,6 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();
+
+// Делает класс Program публичным для WebApplicationFactory в тестах
+public partial class Program { }
