@@ -52,4 +52,10 @@ cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/Fast
 
 - Документация и комментарии на русском языке.
 - Все публичные классы и методы — с XML-документацией (`/// <summary>`).
+- Все async-методы с `CancellationToken ct` параметром обязательно документируются тегом `<param name="ct">Токен отмены операции.</param>`.
 - Коммит после каждого логического шага.
+
+## Архитектурные ограничения
+
+- **Application не зависит от EF Core.** Проект `FastIntegrationTests.Application` не содержит ни одного `<PackageReference>` на EF Core или провайдеры БД. Добавление таких зависимостей — нарушение архитектуры.
+- **Миграции сгенерированы под PostgreSQL.** Файлы в `src/FastIntegrationTests.Infrastructure/Migrations/` содержат Npgsql-специфичные аннотации (`NpgsqlValueGenerationStrategy`) и типы (`timestamp with time zone`). При необходимости поддержки MSSQL как основного провайдера миграции нужно пересоздавать — это известное ограничение учебного проекта (зафиксировано в комментарии `Program.cs`).
