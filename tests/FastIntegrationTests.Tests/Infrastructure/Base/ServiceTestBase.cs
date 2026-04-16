@@ -22,6 +22,9 @@ public abstract class ServiceTestBase : IAsyncLifetime
     /// <summary>Сервис для работы с заказами.</summary>
     protected IOrderService OrderService { get; private set; } = null!;
 
+    /// <summary>
+    /// Создаёт новый экземпляр <see cref="ServiceTestBase"/>.
+    /// </summary>
     /// <param name="fixture">Запущенный контейнер с СУБД.</param>
     protected ServiceTestBase(ContainerFixture fixture) => _fixture = fixture;
 
@@ -41,6 +44,7 @@ public abstract class ServiceTestBase : IAsyncLifetime
     /// <inheritdoc />
     public async Task DisposeAsync()
     {
+        if (_context is null) return;
         await _context.Database.EnsureDeletedAsync();
         await _context.DisposeAsync();
     }

@@ -12,6 +12,9 @@ public sealed class TestDbFactory
 {
     private readonly ContainerFixture _fixture;
 
+    /// <summary>
+    /// Создаёт новый экземпляр <see cref="TestDbFactory"/>.
+    /// </summary>
     /// <param name="fixture">Запущенный контейнер с СУБД.</param>
     public TestDbFactory(ContainerFixture fixture) => _fixture = fixture;
 
@@ -47,7 +50,15 @@ public sealed class TestDbFactory
         }
 
         var context = new ShopDbContext(options);
-        await context.Database.MigrateAsync(ct);
+        try
+        {
+            await context.Database.MigrateAsync(ct);
+        }
+        catch
+        {
+            await context.DisposeAsync();
+            throw;
+        }
         return context;
     }
 }
