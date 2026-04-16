@@ -42,7 +42,15 @@ public class ProductRepository : IProductRepository
     /// <inheritdoc/>
     public async Task DeleteAsync(Product product, CancellationToken ct = default)
     {
-        _context.Products.Remove(product);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.Products
+                .Where(p => p.Id == product.Id)
+                .ExecuteDeleteAsync(ct);
+        }
+        catch (System.Data.Common.DbException ex)
+        {
+            throw new DbUpdateException("Не удалось удалить товар из-за ограничений базы данных.", ex);
+        }
     }
 }
