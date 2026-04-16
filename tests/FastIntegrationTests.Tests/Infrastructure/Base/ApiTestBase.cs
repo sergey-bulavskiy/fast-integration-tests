@@ -1,8 +1,3 @@
-using FastIntegrationTests.Infrastructure.Data;
-using FastIntegrationTests.Tests.Infrastructure.Factories;
-using FastIntegrationTests.Tests.Infrastructure.Fixtures;
-using FastIntegrationTests.Tests.Infrastructure.WebApp;
-
 namespace FastIntegrationTests.Tests.Infrastructure.Base;
 
 /// <summary>

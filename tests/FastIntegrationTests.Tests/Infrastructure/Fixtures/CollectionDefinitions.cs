@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace FastIntegrationTests.Tests.Infrastructure.Fixtures;
 
 /// <summary>Коллекция для сервисных тестов продуктов.</summary>

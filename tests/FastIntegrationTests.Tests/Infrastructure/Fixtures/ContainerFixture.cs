@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Testcontainers.MsSql;
 using Testcontainers.PostgreSql;
-using Xunit;
 
 namespace FastIntegrationTests.Tests.Infrastructure.Fixtures;
 

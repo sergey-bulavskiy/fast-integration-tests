@@ -1,6 +1,3 @@
-using FastIntegrationTests.Infrastructure.Data;
-using FastIntegrationTests.Tests.Infrastructure.Fixtures;
-using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace FastIntegrationTests.Tests.Infrastructure.Factories;

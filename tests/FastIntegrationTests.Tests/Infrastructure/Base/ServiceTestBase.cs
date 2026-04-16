@@ -1,10 +1,3 @@
-using FastIntegrationTests.Application.Interfaces;
-using FastIntegrationTests.Application.Services;
-using FastIntegrationTests.Infrastructure.Data;
-using FastIntegrationTests.Infrastructure.Repositories;
-using FastIntegrationTests.Tests.Infrastructure.Factories;
-using FastIntegrationTests.Tests.Infrastructure.Fixtures;
-
 namespace FastIntegrationTests.Tests.Infrastructure.Base;
 
 /// <summary>
