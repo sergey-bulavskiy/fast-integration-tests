@@ -1,4 +1,3 @@
-using DotNet.Testcontainers.Builders;
 using Microsoft.Extensions.Configuration;
 using Testcontainers.MsSql;
 using Testcontainers.PostgreSql;
@@ -58,5 +57,9 @@ public sealed class ContainerFixture : IAsyncLifetime
     }
 
     /// <inheritdoc />
-    public async Task DisposeAsync() => await _container.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        if (_container is not null)
+            await _container.DisposeAsync();
+    }
 }
