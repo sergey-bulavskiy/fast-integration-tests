@@ -67,6 +67,7 @@ public class OrdersApiTests : ApiTestBase
         var order = await response.Content.ReadFromJsonAsync<OrderDto>();
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(response.Headers.Location);
         Assert.True(order!.Id > 0);
         Assert.Equal(30_000m, order.TotalAmount); // 2 * 15000
     }
@@ -225,25 +226,27 @@ public class OrdersApiTests : ApiTestBase
     /// </summary>
     /// <param name="name">Название товара.</param>
     /// <param name="price">Цена товара.</param>
-    private async Task<ProductDto> CreateProductAsync(string name, decimal price)
+    /// <param name="ct">Токен отмены операции.</param>
+    private async Task<ProductDto> CreateProductAsync(string name, decimal price, CancellationToken ct = default)
     {
         var response = await Client.PostAsJsonAsync("/api/products",
-            new CreateProductRequest { Name = name, Price = price });
+            new CreateProductRequest { Name = name, Price = price }, ct);
         response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<ProductDto>())!;
+        return (await response.Content.ReadFromJsonAsync<ProductDto>(ct))!;
     }
 
     /// <summary>
     /// Создаёт товар и заказ с одной позицией через API, возвращает DTO заказа.
     /// </summary>
-    private async Task<OrderDto> CreateOrderWithProductAsync()
+    /// <param name="ct">Токен отмены операции.</param>
+    private async Task<OrderDto> CreateOrderWithProductAsync(CancellationToken ct = default)
     {
-        var product = await CreateProductAsync("Товар", 100m);
+        var product = await CreateProductAsync("Товар", 100m, ct);
         var response = await Client.PostAsJsonAsync("/api/orders", new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 1 } }
-        });
+        }, ct);
         response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<OrderDto>())!;
+        return (await response.Content.ReadFromJsonAsync<OrderDto>(ct))!;
     }
 }

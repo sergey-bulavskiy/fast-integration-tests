@@ -211,12 +211,16 @@ public class OrderServiceTests : ServiceTestBase
 
     // --- helpers ---
 
-    private async Task<OrderDto> CreateOrderAsync()
+    /// <summary>
+    /// Создаёт товар и заказ с одной позицией, возвращает DTO заказа.
+    /// </summary>
+    /// <param name="ct">Токен отмены операции.</param>
+    private async Task<OrderDto> CreateOrderAsync(CancellationToken ct = default)
     {
-        var product = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
+        var product = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m }, ct);
         return await OrderService.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 1 } }
-        });
+        }, ct);
     }
 }
