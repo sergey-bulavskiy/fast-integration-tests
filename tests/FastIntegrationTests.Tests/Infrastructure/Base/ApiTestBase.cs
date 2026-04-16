@@ -35,9 +35,9 @@ public abstract class ApiTestBase : IAsyncLifetime
     /// <inheritdoc />
     public async Task DisposeAsync()
     {
+        if (_schemaContext is null) return;
         Client?.Dispose();
         if (_factory is not null) await _factory.DisposeAsync();
-        if (_schemaContext is null) return;
         await _schemaContext.Database.EnsureDeletedAsync();
         await _schemaContext.DisposeAsync();
     }
