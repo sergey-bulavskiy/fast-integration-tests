@@ -4,4 +4,7 @@
     <Project Path="src/FastIntegrationTests.Infrastructure/FastIntegrationTests.Infrastructure.csproj" />
     <Project Path="src/FastIntegrationTests.WebApi/FastIntegrationTests.WebApi.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FastIntegrationTests.Tests/FastIntegrationTests.Tests.csproj" />
+  </Folder>
 </Solution>
