@@ -40,7 +40,7 @@ public static class IntegresSqlContainerManager
             .WithEnvironment("PGPASSWORD", "postgres")
             .WithEnvironment("PGPORT", "5432")
             .WithPortBinding(5000, true)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5000))
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("http server started"))
             .Build();
         await integreSqlContainer.StartAsync();
 
