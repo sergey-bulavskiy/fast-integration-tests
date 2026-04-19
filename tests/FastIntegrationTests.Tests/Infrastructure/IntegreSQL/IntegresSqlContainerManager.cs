@@ -9,6 +9,10 @@ namespace FastIntegrationTests.Tests.Infrastructure.IntegreSQL;
 /// Запускает PostgreSQL и IntegreSQL-сервер в Docker-контейнерах один раз на весь процесс.
 /// Все тест-классы, использующие IntegreSQL, разделяют одну пару контейнеров.
 /// </summary>
+/// <remarks>
+/// Контейнеры не останавливаются при завершении процесса — это намеренно для учебного проекта.
+/// Testcontainers использует Ryuk-агент для автоматической очистки осиротевших контейнеров.
+/// </remarks>
 public static class IntegresSqlContainerManager
 {
     private static readonly Lazy<Task<IntegresSqlState>> _state =

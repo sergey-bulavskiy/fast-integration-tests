@@ -1,5 +1,5 @@
 using FastIntegrationTests.Tests.Infrastructure.IntegreSQL;
-using MccSoft.IntegreSql.EF.DatabaseInitialization;
+using MccSoft.IntegreSql.EF;
 
 namespace FastIntegrationTests.Tests.Infrastructure.Base;
 
@@ -10,16 +10,8 @@ namespace FastIntegrationTests.Tests.Infrastructure.Base;
 /// </summary>
 public abstract class ComponentTestBase : IAsyncLifetime
 {
-    private static readonly DatabaseSeedingOptions<ShopDbContext> SeedingOptions =
-        new(
-            Name: "shop-default",
-            SeedingFunction: async ctx => await ctx.Database.MigrateAsync(),
-            DisableEnsureCreated: true,
-            DbContextFactory: opts => new ShopDbContext(opts)
-        );
-
     private string _connectionString = null!;
-    private ShopDbContext _schemaContext = null!;
+    private NpgsqlDatabaseInitializer _initializer = null!;
     private TestWebApplicationFactory _factory = null!;
 
     /// <summary>HTTP-клиент для обращений к тестируемому API.</summary>
@@ -29,13 +21,9 @@ public abstract class ComponentTestBase : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var state = await IntegresSqlContainerManager.GetStateAsync();
-        _connectionString = await state.Initializer.CreateDatabaseGetConnectionString<ShopDbContext>(
-            SeedingOptions);
-
-        var options = new DbContextOptionsBuilder<ShopDbContext>()
-            .UseNpgsql(_connectionString)
-            .Options;
-        _schemaContext = new ShopDbContext(options);
+        _initializer = state.Initializer;
+        _connectionString = await _initializer.CreateDatabaseGetConnectionString<ShopDbContext>(
+            IntegresSqlDefaults.SeedingOptions);
 
         _factory = new TestWebApplicationFactory("PostgreSQL", _connectionString);
         Client = _factory.CreateClient();
@@ -46,8 +34,6 @@ public abstract class ComponentTestBase : IAsyncLifetime
     {
         Client?.Dispose();
         if (_factory is not null) await _factory.DisposeAsync();
-        await _schemaContext.DisposeAsync();
-        var state = await IntegresSqlContainerManager.GetStateAsync();
-        await state.Initializer.RemoveDatabase(_connectionString);
+        await _initializer.RemoveDatabase(_connectionString);
     }
 }

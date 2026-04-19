@@ -1,5 +1,5 @@
 using FastIntegrationTests.Tests.Infrastructure.IntegreSQL;
-using MccSoft.IntegreSql.EF.DatabaseInitialization;
+using MccSoft.IntegreSql.EF;
 
 namespace FastIntegrationTests.Tests.Infrastructure.Base;
 
@@ -10,15 +10,8 @@ namespace FastIntegrationTests.Tests.Infrastructure.Base;
 /// </summary>
 public abstract class AppServiceTestBase : IAsyncLifetime
 {
-    private static readonly DatabaseSeedingOptions<ShopDbContext> SeedingOptions =
-        new(
-            Name: "shop-default",
-            SeedingFunction: async ctx => await ctx.Database.MigrateAsync(),
-            DisableEnsureCreated: true,
-            DbContextFactory: opts => new ShopDbContext(opts)
-        );
-
     private string _connectionString = null!;
+    private NpgsqlDatabaseInitializer _initializer = null!;
     private ShopDbContext _context = null!;
 
     /// <summary>Сервис для работы с товарами.</summary>
@@ -31,8 +24,9 @@ public abstract class AppServiceTestBase : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var state = await IntegresSqlContainerManager.GetStateAsync();
-        _connectionString = await state.Initializer.CreateDatabaseGetConnectionString<ShopDbContext>(
-            SeedingOptions);
+        _initializer = state.Initializer;
+        _connectionString = await _initializer.CreateDatabaseGetConnectionString<ShopDbContext>(
+            IntegresSqlDefaults.SeedingOptions);
 
         var options = new DbContextOptionsBuilder<ShopDbContext>()
             .UseNpgsql(_connectionString)
@@ -49,7 +43,6 @@ public abstract class AppServiceTestBase : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _context.DisposeAsync();
-        var state = await IntegresSqlContainerManager.GetStateAsync();
-        await state.Initializer.RemoveDatabase(_connectionString);
+        await _initializer.RemoveDatabase(_connectionString);
     }
 }
