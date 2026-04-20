@@ -14,32 +14,32 @@ namespace FastIntegrationTests.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-CREATE TABLE "Customers" (
-    "Id" serial PRIMARY KEY,
-    "Email" varchar(320) NOT NULL,
-    "FirstName" varchar(100) NOT NULL,
-    "LastName" varchar(100) NOT NULL,
-    "Phone" varchar(30) NULL,
-    "IsActive" boolean NOT NULL DEFAULT true,
-    "CreatedAt" timestamp with time zone NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamp with time zone NOT NULL DEFAULT now()
+CREATE TABLE ""Customers"" (
+    ""Id"" serial PRIMARY KEY,
+    ""Email"" varchar(320) NOT NULL,
+    ""FirstName"" varchar(100) NOT NULL,
+    ""LastName"" varchar(100) NOT NULL,
+    ""Phone"" varchar(30) NULL,
+    ""IsActive"" boolean NOT NULL DEFAULT true,
+    ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+    ""UpdatedAt"" timestamp with time zone NOT NULL DEFAULT now()
 );
-CREATE UNIQUE INDEX "IX_Customers_Email" ON "Customers" ("Email");
-CREATE INDEX "IX_Customers_IsActive_CreatedAt" ON "Customers" ("IsActive", "CreatedAt" DESC);
+CREATE UNIQUE INDEX ""IX_Customers_Email"" ON ""Customers"" (""Email"");
+CREATE INDEX ""IX_Customers_IsActive_CreatedAt"" ON ""Customers"" (""IsActive"", ""CreatedAt"" DESC);
 
-CREATE TABLE "CustomerAddresses" (
-    "Id" serial PRIMARY KEY,
-    "CustomerId" integer NOT NULL REFERENCES "Customers"("Id") ON DELETE CASCADE,
-    "Line1" varchar(255) NOT NULL,
-    "Line2" varchar(255) NULL,
-    "City" varchar(100) NOT NULL,
-    "PostalCode" varchar(20) NOT NULL,
-    "Country" varchar(2) NOT NULL DEFAULT 'RU',
-    "IsDefault" boolean NOT NULL DEFAULT false,
-    "CreatedAt" timestamp with time zone NOT NULL DEFAULT now()
+CREATE TABLE ""CustomerAddresses"" (
+    ""Id"" serial PRIMARY KEY,
+    ""CustomerId"" integer NOT NULL REFERENCES ""Customers""(""Id"") ON DELETE CASCADE,
+    ""Line1"" varchar(255) NOT NULL,
+    ""Line2"" varchar(255) NULL,
+    ""City"" varchar(100) NOT NULL,
+    ""PostalCode"" varchar(20) NOT NULL,
+    ""Country"" varchar(2) NOT NULL DEFAULT 'RU',
+    ""IsDefault"" boolean NOT NULL DEFAULT false,
+    ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now()
 );
-CREATE INDEX "IX_CustomerAddresses_CustomerId" ON "CustomerAddresses" ("CustomerId");
-CREATE INDEX "IX_CustomerAddresses_CustomerId_IsDefault" ON "CustomerAddresses" ("CustomerId", "IsDefault") WHERE "IsDefault" = true;
+CREATE INDEX ""IX_CustomerAddresses_CustomerId"" ON ""CustomerAddresses"" (""CustomerId"");
+CREATE INDEX ""IX_CustomerAddresses_CustomerId_IsDefault"" ON ""CustomerAddresses"" (""CustomerId"", ""IsDefault"") WHERE ""IsDefault"" = true;
 ");
         }
 
@@ -47,8 +47,8 @@ CREATE INDEX "IX_CustomerAddresses_CustomerId_IsDefault" ON "CustomerAddresses" 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-DROP TABLE IF EXISTS "CustomerAddresses";
-DROP TABLE IF EXISTS "Customers";
+DROP TABLE IF EXISTS ""CustomerAddresses"";
+DROP TABLE IF EXISTS ""Customers"";
 ");
         }
     }

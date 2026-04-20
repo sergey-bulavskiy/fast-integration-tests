@@ -14,10 +14,10 @@ namespace FastIntegrationTests.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "IX_Products_Price" ON "Products" ("Price");
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "IX_Products_Name_Text" ON "Products" USING btree ("Name" text_pattern_ops);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "IX_Orders_CreatedAt" ON "Orders" ("CreatedAt");
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "IX_OrderItems_ProductId_Qty" ON "OrderItems" ("ProductId", "Quantity");
+CREATE INDEX CONCURRENTLY IF NOT EXISTS ""IX_Products_Price"" ON ""Products"" (""Price"");
+CREATE INDEX CONCURRENTLY IF NOT EXISTS ""IX_Products_Name_Text"" ON ""Products"" USING btree (""Name"" text_pattern_ops);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS ""IX_Orders_CreatedAt"" ON ""Orders"" (""CreatedAt"");
+CREATE INDEX CONCURRENTLY IF NOT EXISTS ""IX_OrderItems_ProductId_Qty"" ON ""OrderItems"" (""ProductId"", ""Quantity"");
 ");
         }
 
@@ -25,10 +25,10 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS "IX_OrderItems_ProductId_Qty" ON "OrderI
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-DROP INDEX IF EXISTS "IX_Products_Price";
-DROP INDEX IF EXISTS "IX_Products_Name_Text";
-DROP INDEX IF EXISTS "IX_Orders_CreatedAt";
-DROP INDEX IF EXISTS "IX_OrderItems_ProductId_Qty";
+DROP INDEX IF EXISTS ""IX_Products_Price"";
+DROP INDEX IF EXISTS ""IX_Products_Name_Text"";
+DROP INDEX IF EXISTS ""IX_Orders_CreatedAt"";
+DROP INDEX IF EXISTS ""IX_OrderItems_ProductId_Qty"";
 ");
         }
     }

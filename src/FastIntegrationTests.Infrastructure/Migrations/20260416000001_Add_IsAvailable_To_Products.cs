@@ -14,7 +14,7 @@ namespace FastIntegrationTests.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-ALTER TABLE "Products" ADD COLUMN "IsAvailable" boolean NOT NULL DEFAULT true;
+ALTER TABLE ""Products"" ADD COLUMN ""IsAvailable"" boolean NOT NULL DEFAULT true;
 ");
         }
 
@@ -22,7 +22,7 @@ ALTER TABLE "Products" ADD COLUMN "IsAvailable" boolean NOT NULL DEFAULT true;
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-ALTER TABLE "Products" DROP COLUMN "IsAvailable";
+ALTER TABLE ""Products"" DROP COLUMN ""IsAvailable"";
 ");
         }
     }

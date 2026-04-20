@@ -14,10 +14,10 @@ namespace FastIntegrationTests.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-ALTER TABLE "Products" ADD COLUMN "Notes" text NULL;
-ALTER TABLE "Products" ADD COLUMN "WeightGrams" integer NULL;
-ALTER TABLE "Orders" ADD COLUMN "CustomerNote" text NULL;
-ALTER TABLE "Orders" ADD COLUMN "InternalNote" text NULL;
+ALTER TABLE ""Products"" ADD COLUMN ""Notes"" text NULL;
+ALTER TABLE ""Products"" ADD COLUMN ""WeightGrams"" integer NULL;
+ALTER TABLE ""Orders"" ADD COLUMN ""CustomerNote"" text NULL;
+ALTER TABLE ""Orders"" ADD COLUMN ""InternalNote"" text NULL;
 ");
         }
 
@@ -25,10 +25,10 @@ ALTER TABLE "Orders" ADD COLUMN "InternalNote" text NULL;
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-ALTER TABLE "Products" DROP COLUMN "Notes";
-ALTER TABLE "Products" DROP COLUMN "WeightGrams";
-ALTER TABLE "Orders" DROP COLUMN "CustomerNote";
-ALTER TABLE "Orders" DROP COLUMN "InternalNote";
+ALTER TABLE ""Products"" DROP COLUMN ""Notes"";
+ALTER TABLE ""Products"" DROP COLUMN ""WeightGrams"";
+ALTER TABLE ""Orders"" DROP COLUMN ""CustomerNote"";
+ALTER TABLE ""Orders"" DROP COLUMN ""InternalNote"";
 ");
         }
     }

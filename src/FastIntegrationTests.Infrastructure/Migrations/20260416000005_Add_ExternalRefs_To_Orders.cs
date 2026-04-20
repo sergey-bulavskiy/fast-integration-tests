@@ -14,11 +14,11 @@ namespace FastIntegrationTests.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-ALTER TABLE "Orders" ADD COLUMN "ExternalId" uuid NULL;
-ALTER TABLE "Orders" ADD COLUMN "CustomerEmail" varchar(320) NULL;
-ALTER TABLE "Orders" ADD COLUMN "TrackingCode" varchar(100) NULL;
-CREATE UNIQUE INDEX "IX_Orders_ExternalId" ON "Orders" ("ExternalId") WHERE "ExternalId" IS NOT NULL;
-CREATE INDEX "IX_Orders_CustomerEmail" ON "Orders" ("CustomerEmail");
+ALTER TABLE ""Orders"" ADD COLUMN ""ExternalId"" uuid NULL;
+ALTER TABLE ""Orders"" ADD COLUMN ""CustomerEmail"" varchar(320) NULL;
+ALTER TABLE ""Orders"" ADD COLUMN ""TrackingCode"" varchar(100) NULL;
+CREATE UNIQUE INDEX ""IX_Orders_ExternalId"" ON ""Orders"" (""ExternalId"") WHERE ""ExternalId"" IS NOT NULL;
+CREATE INDEX ""IX_Orders_CustomerEmail"" ON ""Orders"" (""CustomerEmail"");
 ");
         }
 
@@ -26,11 +26,11 @@ CREATE INDEX "IX_Orders_CustomerEmail" ON "Orders" ("CustomerEmail");
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-DROP INDEX IF EXISTS "IX_Orders_ExternalId";
-DROP INDEX IF EXISTS "IX_Orders_CustomerEmail";
-ALTER TABLE "Orders" DROP COLUMN "ExternalId";
-ALTER TABLE "Orders" DROP COLUMN "CustomerEmail";
-ALTER TABLE "Orders" DROP COLUMN "TrackingCode";
+DROP INDEX IF EXISTS ""IX_Orders_ExternalId"";
+DROP INDEX IF EXISTS ""IX_Orders_CustomerEmail"";
+ALTER TABLE ""Orders"" DROP COLUMN ""ExternalId"";
+ALTER TABLE ""Orders"" DROP COLUMN ""CustomerEmail"";
+ALTER TABLE ""Orders"" DROP COLUMN ""TrackingCode"";
 ");
         }
     }

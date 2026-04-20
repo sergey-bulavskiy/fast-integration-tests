@@ -14,8 +14,8 @@ namespace FastIntegrationTests.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-ALTER TABLE "Products" ADD COLUMN "Sku" varchar(100) NULL;
-CREATE UNIQUE INDEX "IX_Products_Sku" ON "Products" ("Sku") WHERE "Sku" IS NOT NULL;
+ALTER TABLE ""Products"" ADD COLUMN ""Sku"" varchar(100) NULL;
+CREATE UNIQUE INDEX ""IX_Products_Sku"" ON ""Products"" (""Sku"") WHERE ""Sku"" IS NOT NULL;
 ");
         }
 
@@ -23,8 +23,8 @@ CREATE UNIQUE INDEX "IX_Products_Sku" ON "Products" ("Sku") WHERE "Sku" IS NOT N
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-DROP INDEX IF EXISTS "IX_Products_Sku";
-ALTER TABLE "Products" DROP COLUMN "Sku";
+DROP INDEX IF EXISTS ""IX_Products_Sku"";
+ALTER TABLE ""Products"" DROP COLUMN ""Sku"";
 ");
         }
     }
