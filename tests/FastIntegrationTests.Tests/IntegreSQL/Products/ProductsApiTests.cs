@@ -9,8 +9,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// GET /api/products при пустой базе возвращает 200 и пустой массив.
     /// </summary>
-    [Fact]
-    public async Task GetAll_WhenNoProducts_Returns200WithEmptyArray()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAll_WhenNoProducts_Returns200WithEmptyArray(int _)
     {
         var response = await Client.GetAsync("/api/products");
 
@@ -22,8 +23,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// GET /api/products при наличии товаров возвращает 200 и список.
     /// </summary>
-    [Fact]
-    public async Task GetAll_WhenProductsExist_Returns200WithProducts()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAll_WhenProductsExist_Returns200WithProducts(int _)
     {
         await CreateProductAsync("Товар 1", 100m);
         await CreateProductAsync("Товар 2", 200m);
@@ -38,8 +40,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// GET /api/products/{id} для существующего товара возвращает 200 и данные товара.
     /// </summary>
-    [Fact]
-    public async Task GetById_WhenProductExists_Returns200WithProduct()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetById_WhenProductExists_Returns200WithProduct(int _)
     {
         var created = await CreateProductAsync("Ноутбук", 50_000m);
 
@@ -54,8 +57,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// GET /api/products/{id} для несуществующего товара возвращает 404.
     /// </summary>
-    [Fact]
-    public async Task GetById_WhenProductNotFound_Returns404()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetById_WhenProductNotFound_Returns404(int _)
     {
         var response = await Client.GetAsync("/api/products/999");
 
@@ -65,8 +69,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// POST /api/products с валидными данными возвращает 201, заголовок Location и созданный товар.
     /// </summary>
-    [Fact]
-    public async Task Create_ValidRequest_Returns201WithLocationHeaderAndId()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Create_ValidRequest_Returns201WithLocationHeaderAndId(int _)
     {
         var request = new CreateProductRequest { Name = "Монитор", Description = "4K", Price = 25_000m };
 
@@ -82,8 +87,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// PUT /api/products/{id} для существующего товара возвращает 200 с обновлёнными полями.
     /// </summary>
-    [Fact]
-    public async Task Update_WhenProductExists_Returns200WithUpdatedFields()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Update_WhenProductExists_Returns200WithUpdatedFields(int _)
     {
         var created = await CreateProductAsync("Старое", 100m);
         var updateRequest = new UpdateProductRequest { Name = "Новое", Description = "Обновлено", Price = 200m };
@@ -100,8 +106,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// PUT /api/products/{id} для несуществующего товара возвращает 404.
     /// </summary>
-    [Fact]
-    public async Task Update_WhenProductNotFound_Returns404()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Update_WhenProductNotFound_Returns404(int _)
     {
         var request = new UpdateProductRequest { Name = "Название", Description = string.Empty, Price = 100m };
 
@@ -113,8 +120,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// DELETE /api/products/{id} для существующего товара возвращает 204.
     /// </summary>
-    [Fact]
-    public async Task Delete_WhenProductExists_Returns204()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Delete_WhenProductExists_Returns204(int _)
     {
         var created = await CreateProductAsync("Удаляемый", 100m);
 
@@ -126,8 +134,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// DELETE /api/products/{id} для несуществующего товара возвращает 404.
     /// </summary>
-    [Fact]
-    public async Task Delete_WhenProductNotFound_Returns404()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Delete_WhenProductNotFound_Returns404(int _)
     {
         var response = await Client.DeleteAsync("/api/products/999");
 
@@ -137,8 +146,9 @@ public class ProductsApiTests : ComponentTestBase
     /// <summary>
     /// POST затем GET возвращают идентичные данные товара.
     /// </summary>
-    [Fact]
-    public async Task CreateThenGetById_DataMatchesExactly()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateThenGetById_DataMatchesExactly(int _)
     {
         var createRequest = new CreateProductRequest { Name = "Системный блок", Description = "Core i9", Price = 80_000m };
         var createResponse = await Client.PostAsJsonAsync("/api/products", createRequest);

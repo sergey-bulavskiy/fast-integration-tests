@@ -16,16 +16,18 @@ public class ProductServiceContainerTests : ContainerServiceTestBase
     /// <param name="fixture">Запущенный контейнер с СУБД.</param>
     public ProductServiceContainerTests(ContainerFixture fixture) : base(fixture) { }
 
-    [Fact]
-    public async Task GetAllAsync_WhenNoProducts_ReturnsEmptyList()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAllAsync_WhenNoProducts_ReturnsEmptyList(int _)
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Fact]
-    public async Task GetAllAsync_WhenProductsExist_ReturnsAllProducts()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAllAsync_WhenProductsExist_ReturnsAllProducts(int _)
     {
         await Sut.CreateAsync(new CreateProductRequest { Name = "Товар 1", Description = "Описание 1", Price = 100m });
         await Sut.CreateAsync(new CreateProductRequest { Name = "Товар 2", Description = "Описание 2", Price = 200m });
@@ -35,8 +37,9 @@ public class ProductServiceContainerTests : ContainerServiceTestBase
         Assert.Equal(2, result.Count);
     }
 
-    [Fact]
-    public async Task GetByIdAsync_WhenProductExists_ReturnsProduct()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetByIdAsync_WhenProductExists_ReturnsProduct(int _)
     {
         var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Ноутбук", Description = "Core i9", Price = 50_000m });
 
@@ -48,14 +51,16 @@ public class ProductServiceContainerTests : ContainerServiceTestBase
         Assert.Equal(50_000m, result.Price);
     }
 
-    [Fact]
-    public async Task GetByIdAsync_WhenProductNotFound_ThrowsNotFoundException()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetByIdAsync_WhenProductNotFound_ThrowsNotFoundException(int _)
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(999));
     }
 
-    [Fact]
-    public async Task CreateAsync_PersistsProductAndReturnsWithAssignedId()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateAsync_PersistsProductAndReturnsWithAssignedId(int _)
     {
         var request = new CreateProductRequest { Name = "Мышь", Description = "Беспроводная", Price = 2_500m };
 
@@ -67,8 +72,9 @@ public class ProductServiceContainerTests : ContainerServiceTestBase
         Assert.Equal(2_500m, result.Price);
     }
 
-    [Fact]
-    public async Task CreateAsync_SetsCreatedAtAutomatically()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateAsync_SetsCreatedAtAutomatically(int _)
     {
         var before = DateTime.UtcNow.AddSeconds(-1);
 
@@ -78,8 +84,9 @@ public class ProductServiceContainerTests : ContainerServiceTestBase
         Assert.InRange(result.CreatedAt, before, after);
     }
 
-    [Fact]
-    public async Task UpdateAsync_UpdatesProductFieldsInDatabase()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task UpdateAsync_UpdatesProductFieldsInDatabase(int _)
     {
         var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Старое название", Price = 1_000m });
         var updateRequest = new UpdateProductRequest { Name = "Новое название", Description = "Новое описание", Price = 1_500m };
@@ -96,16 +103,18 @@ public class ProductServiceContainerTests : ContainerServiceTestBase
         Assert.Equal(1_500m, fetched.Price);
     }
 
-    [Fact]
-    public async Task UpdateAsync_WhenProductNotFound_ThrowsNotFoundException()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task UpdateAsync_WhenProductNotFound_ThrowsNotFoundException(int _)
     {
         var request = new UpdateProductRequest { Name = "Название", Description = string.Empty, Price = 100m };
 
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.UpdateAsync(999, request));
     }
 
-    [Fact]
-    public async Task DeleteAsync_RemovesProductFromDatabase()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task DeleteAsync_RemovesProductFromDatabase(int _)
     {
         var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Временный товар", Price = 500m });
 
@@ -114,14 +123,16 @@ public class ProductServiceContainerTests : ContainerServiceTestBase
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(created.Id));
     }
 
-    [Fact]
-    public async Task DeleteAsync_WhenProductNotFound_ThrowsNotFoundException()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task DeleteAsync_WhenProductNotFound_ThrowsNotFoundException(int _)
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.DeleteAsync(999));
     }
 
-    [Fact]
-    public async Task DeleteAsync_WhenProductHasOrderItems_ThrowsDbUpdateException()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task DeleteAsync_WhenProductHasOrderItems_ThrowsDbUpdateException(int _)
     {
         // Создаём товар и заказ с этим товаром
         var product = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар в заказе", Price = 1_000m });

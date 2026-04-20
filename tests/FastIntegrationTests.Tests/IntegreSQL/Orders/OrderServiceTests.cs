@@ -19,16 +19,18 @@ public class OrderServiceTests : AppServiceTestBase
         Sut = new OrderService(new OrderRepository(Context), productRepo);
     }
 
-    [Fact]
-    public async Task GetAllAsync_WhenNoOrders_ReturnsEmptyList()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAllAsync_WhenNoOrders_ReturnsEmptyList(int _)
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Fact]
-    public async Task GetAllAsync_WhenOrdersExist_ReturnsAllOrders()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAllAsync_WhenOrdersExist_ReturnsAllOrders(int _)
     {
         var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
         await Sut.CreateAsync(new CreateOrderRequest
@@ -45,8 +47,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(2, result.Count);
     }
 
-    [Fact]
-    public async Task GetByIdAsync_WhenOrderExists_ReturnsOrderWithItems()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetByIdAsync_WhenOrderExists_ReturnsOrderWithItems(int _)
     {
         var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 500m });
         var created = await Sut.CreateAsync(new CreateOrderRequest
@@ -62,14 +65,16 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(3, result.Items[0].Quantity);
     }
 
-    [Fact]
-    public async Task GetByIdAsync_WhenOrderNotFound_ThrowsNotFoundException()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetByIdAsync_WhenOrderNotFound_ThrowsNotFoundException(int _)
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(999));
     }
 
-    [Fact]
-    public async Task CreateAsync_CalculatesTotalAmountCorrectly()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateAsync_CalculatesTotalAmountCorrectly(int _)
     {
         var product1 = await _products.CreateAsync(new CreateProductRequest { Name = "Товар 1", Price = 100m });
         var product2 = await _products.CreateAsync(new CreateProductRequest { Name = "Товар 2", Price = 200m });
@@ -86,8 +91,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(800m, order.TotalAmount); // 200 + 600
     }
 
-    [Fact]
-    public async Task CreateAsync_SetsUnitPriceFromCurrentProductPrice()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateAsync_SetsUnitPriceFromCurrentProductPrice(int _)
     {
         var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 999m });
 
@@ -99,8 +105,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(999m, order.Items[0].UnitPrice);
     }
 
-    [Fact]
-    public async Task CreateAsync_WhenProductNotFound_ThrowsNotFoundException()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateAsync_WhenProductNotFound_ThrowsNotFoundException(int _)
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.CreateAsync(new CreateOrderRequest
         {
@@ -108,8 +115,9 @@ public class OrderServiceTests : AppServiceTestBase
         }));
     }
 
-    [Fact]
-    public async Task CreateAsync_NewOrderHasStatusNew()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateAsync_NewOrderHasStatusNew(int _)
     {
         var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
 
@@ -121,8 +129,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(OrderStatus.New, order.Status);
     }
 
-    [Fact]
-    public async Task ConfirmAsync_ChangesStatusFromNewToConfirmed()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task ConfirmAsync_ChangesStatusFromNewToConfirmed(int _)
     {
         var order = await CreateOrderAsync();
 
@@ -131,8 +140,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(OrderStatus.Confirmed, confirmed.Status);
     }
 
-    [Fact]
-    public async Task ShipAsync_ChangesStatusFromConfirmedToShipped()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task ShipAsync_ChangesStatusFromConfirmedToShipped(int _)
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -142,8 +152,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(OrderStatus.Shipped, shipped.Status);
     }
 
-    [Fact]
-    public async Task CompleteAsync_ChangesStatusFromShippedToCompleted()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CompleteAsync_ChangesStatusFromShippedToCompleted(int _)
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -154,8 +165,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(OrderStatus.Completed, completed.Status);
     }
 
-    [Fact]
-    public async Task CancelAsync_ChangesStatusFromNewToCancelled()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CancelAsync_ChangesStatusFromNewToCancelled(int _)
     {
         var order = await CreateOrderAsync();
 
@@ -164,8 +176,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(OrderStatus.Cancelled, cancelled.Status);
     }
 
-    [Fact]
-    public async Task CancelAsync_ChangesStatusFromConfirmedToCancelled()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CancelAsync_ChangesStatusFromConfirmedToCancelled(int _)
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -175,8 +188,9 @@ public class OrderServiceTests : AppServiceTestBase
         Assert.Equal(OrderStatus.Cancelled, cancelled.Status);
     }
 
-    [Fact]
-    public async Task ConfirmAsync_WhenOrderIsCompleted_ThrowsInvalidOrderStatusTransitionException()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task ConfirmAsync_WhenOrderIsCompleted_ThrowsInvalidOrderStatusTransitionException(int _)
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -187,8 +201,9 @@ public class OrderServiceTests : AppServiceTestBase
             () => Sut.ConfirmAsync(order.Id));
     }
 
-    [Fact]
-    public async Task CancelAsync_WhenOrderIsShipped_ThrowsInvalidOrderStatusTransitionException()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CancelAsync_WhenOrderIsShipped_ThrowsInvalidOrderStatusTransitionException(int _)
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -198,8 +213,9 @@ public class OrderServiceTests : AppServiceTestBase
             () => Sut.CancelAsync(order.Id));
     }
 
-    [Fact]
-    public async Task FullLifecycle_CreateConfirmShipComplete_StatusCorrectAtEachStep()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task FullLifecycle_CreateConfirmShipComplete_StatusCorrectAtEachStep(int _)
     {
         var order = await CreateOrderAsync();
         Assert.Equal(OrderStatus.New, order.Status);

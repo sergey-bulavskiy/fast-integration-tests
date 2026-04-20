@@ -13,8 +13,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
     /// <param name="fixture">Запущенный контейнер с СУБД.</param>
     public OrdersApiContainerTests(ContainerFixture fixture) : base(fixture) { }
 
-    [Fact]
-    public async Task GetAll_WhenNoOrders_Returns200WithEmptyArray()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAll_WhenNoOrders_Returns200WithEmptyArray(int _)
     {
         var response = await Client.GetAsync("/api/orders");
 
@@ -23,8 +24,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Empty(orders!);
     }
 
-    [Fact]
-    public async Task GetAll_WhenOrdersExist_Returns200WithOrders()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAll_WhenOrdersExist_Returns200WithOrders(int _)
     {
         await CreateOrderWithProductAsync();
         await CreateOrderWithProductAsync();
@@ -36,8 +38,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(2, orders!.Count);
     }
 
-    [Fact]
-    public async Task GetById_WhenOrderExists_Returns200WithItems()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetById_WhenOrderExists_Returns200WithItems(int _)
     {
         var created = await CreateOrderWithProductAsync();
 
@@ -49,16 +52,18 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Single(order.Items);
     }
 
-    [Fact]
-    public async Task GetById_WhenOrderNotFound_Returns404()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetById_WhenOrderNotFound_Returns404(int _)
     {
         var response = await Client.GetAsync("/api/orders/999");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Create_ValidRequest_Returns201WithCalculatedTotalAmount()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Create_ValidRequest_Returns201WithCalculatedTotalAmount(int _)
     {
         var product = await CreateProductAsync("Процессор", 15_000m);
         var request = new CreateOrderRequest
@@ -75,8 +80,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(30_000m, order.TotalAmount); // 2 * 15000
     }
 
-    [Fact]
-    public async Task Create_WhenProductNotFound_Returns404()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Create_WhenProductNotFound_Returns404(int _)
     {
         var request = new CreateOrderRequest
         {
@@ -88,8 +94,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Confirm_WhenOrderIsNew_Returns200WithConfirmedStatus()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Confirm_WhenOrderIsNew_Returns200WithConfirmedStatus(int _)
     {
         var order = await CreateOrderWithProductAsync();
 
@@ -100,8 +107,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(OrderStatus.Confirmed, confirmed!.Status);
     }
 
-    [Fact]
-    public async Task Ship_WhenOrderIsConfirmed_Returns200WithShippedStatus()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Ship_WhenOrderIsConfirmed_Returns200WithShippedStatus(int _)
     {
         var order = await CreateOrderWithProductAsync();
         await Client.PostAsync($"/api/orders/{order.Id}/confirm", null);
@@ -113,8 +121,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(OrderStatus.Shipped, shipped!.Status);
     }
 
-    [Fact]
-    public async Task Complete_WhenOrderIsShipped_Returns200WithCompletedStatus()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Complete_WhenOrderIsShipped_Returns200WithCompletedStatus(int _)
     {
         var order = await CreateOrderWithProductAsync();
         await Client.PostAsync($"/api/orders/{order.Id}/confirm", null);
@@ -127,8 +136,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(OrderStatus.Completed, completed!.Status);
     }
 
-    [Fact]
-    public async Task Cancel_WhenOrderIsNew_Returns200WithCancelledStatus()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Cancel_WhenOrderIsNew_Returns200WithCancelledStatus(int _)
     {
         var order = await CreateOrderWithProductAsync();
 
@@ -139,8 +149,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(OrderStatus.Cancelled, cancelled!.Status);
     }
 
-    [Fact]
-    public async Task Cancel_WhenOrderIsConfirmed_Returns200WithCancelledStatus()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Cancel_WhenOrderIsConfirmed_Returns200WithCancelledStatus(int _)
     {
         var order = await CreateOrderWithProductAsync();
         await Client.PostAsync($"/api/orders/{order.Id}/confirm", null);
@@ -152,16 +163,18 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(OrderStatus.Cancelled, cancelled!.Status);
     }
 
-    [Fact]
-    public async Task Confirm_WhenOrderNotFound_Returns404()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Confirm_WhenOrderNotFound_Returns404(int _)
     {
         var response = await Client.PostAsync("/api/orders/999/confirm", null);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Ship_WhenOrderIsNew_InvalidTransition_Returns400()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Ship_WhenOrderIsNew_InvalidTransition_Returns400(int _)
     {
         var order = await CreateOrderWithProductAsync();
 
@@ -171,8 +184,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Cancel_WhenOrderIsShipped_InvalidTransition_Returns400()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task Cancel_WhenOrderIsShipped_InvalidTransition_Returns400(int _)
     {
         var order = await CreateOrderWithProductAsync();
         await Client.PostAsync($"/api/orders/{order.Id}/confirm", null);
@@ -184,8 +198,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
-    public async Task CreateThenGetById_OrderItemsMatchRequest()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateThenGetById_OrderItemsMatchRequest(int _)
     {
         var product = await CreateProductAsync("Видеокарта", 40_000m);
         var createRequest = new CreateOrderRequest
@@ -206,8 +221,9 @@ public class OrdersApiContainerTests : ContainerApiTestBase
         Assert.Equal(40_000m, fetched.Items[0].UnitPrice);
     }
 
-    [Fact]
-    public async Task FullLifecycle_CreateConfirmShipCompleteGetById_StatusIsCompleted()
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task FullLifecycle_CreateConfirmShipCompleteGetById_StatusIsCompleted(int _)
     {
         var order = await CreateOrderWithProductAsync();
 
