@@ -17,9 +17,6 @@ dotnet tool restore
 # Запустить PostgreSQL локально
 docker-compose up postgres -d
 
-# Запустить MSSQL локально
-docker-compose up mssql -d
-
 # Добавить новую миграцию
 dotnet ef migrations add <НазваниеМиграции> \
   --project src/FastIntegrationTests.Infrastructure \
@@ -50,8 +47,7 @@ dotnet test tests/FastIntegrationTests.Tests --filter "Collection=OrdersApi"
 
 ### Как работают тесты
 
-- **Требование:** Docker должен быть запущен. Testcontainers автоматически поднимает контейнер PostgreSQL или MSSQL.
-- **Провайдер БД** определяется из `tests/FastIntegrationTests.Tests/appsettings.json` — по умолчанию `PostgreSQL`. Менять вручную не нужно: Testcontainers сам запустит нужный контейнер.
+- **Требование:** Docker должен быть запущен. Testcontainers автоматически поднимает контейнер PostgreSQL.
 - **Изоляция:** каждый тест создаёт отдельную базу `test_{guid}`, применяет миграции через EF Core, удаляет базу после завершения.
 - **Параллелизм:** 4 xUnit-коллекции выполняются параллельно (`maxParallelThreads = 4` в `xunit.runner.json`).
 - **Инфраструктура скрыта:** тесты работают только через `IProductService` / `IOrderService` (сервисный уровень) или `HttpClient` (HTTP-уровень). Создание и удаление базы данных происходит в базовых классах `ServiceTestBase` / `ApiTestBase`.
@@ -65,13 +61,13 @@ dotnet test tests/FastIntegrationTests.Tests --filter "Collection=OrdersApi"
 - **WebApi** — контроллеры (`Controllers/`), `Program.cs` с DI-конфигурацией, глобальная обработка ошибок (`Middleware/GlobalExceptionHandler.cs`).
 - **Tests** (`tests/FastIntegrationTests.Tests/`) — интеграционные тесты. Инфраструктура тестов в `Infrastructure/` (фикстуры, фабрики, базовые классы). Тест-классы в `Products/` и `Orders/`.
 
-## Переключение провайдера БД
+## Локальная разработка
 
 Файл `appsettings.Development.json` не хранится в репозитории. После клонирования скопировать шаблон:
 ```bash
 cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/FastIntegrationTests.WebApi/appsettings.Development.json
 ```
-Затем в скопированном файле изменить `"DatabaseProvider"` на `"PostgreSQL"` или `"MSSQL"` и заполнить строки подключения. Оба docker-сервиса объявлены в `docker-compose.yml`.
+Затем заполнить строку подключения PostgreSQL.
 
 ## Соглашения
 
@@ -83,4 +79,3 @@ cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/Fast
 ## Архитектурные ограничения
 
 - **Application не зависит от EF Core.** Проект `FastIntegrationTests.Application` не содержит ни одного `<PackageReference>` на EF Core или провайдеры БД. Добавление таких зависимостей — нарушение архитектуры.
-- **Миграции сгенерированы под PostgreSQL.** Файлы в `src/FastIntegrationTests.Infrastructure/Migrations/` содержат Npgsql-специфичные аннотации (`NpgsqlValueGenerationStrategy`) и типы (`timestamp with time zone`). При необходимости поддержки MSSQL как основного провайдера миграции нужно пересоздавать — это известное ограничение учебного проекта (зафиксировано в комментарии `Program.cs`).

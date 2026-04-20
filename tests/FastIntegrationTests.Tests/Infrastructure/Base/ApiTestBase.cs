@@ -28,7 +28,7 @@ public abstract class ApiTestBase : IAsyncLifetime
 
         // Передаём строку подключения к уже готовой БД в фабрику приложения
         var connectionString = _schemaContext.Database.GetConnectionString()!;
-        _factory = new TestWebApplicationFactory(_fixture.Provider, connectionString);
+        _factory = new TestWebApplicationFactory(connectionString);
         Client = _factory.CreateClient();
     }
 

@@ -26,7 +26,7 @@ public abstract class ComponentTestBase : IAsyncLifetime
         _connectionString = await _initializer.CreateDatabaseGetConnectionString<ShopDbContext>(
             IntegresSqlDefaults.SeedingOptions);
 
-        _factory = new TestWebApplicationFactory("PostgreSQL", _connectionString);
+        _factory = new TestWebApplicationFactory(_connectionString);
         Client = _factory.CreateClient();
     }
 
