@@ -32,15 +32,23 @@ dotnet ef database update \
 ## Интеграционные тесты
 
 ```bash
-# Запустить все 57 тестов (требует запущенный Docker)
+# Запустить все тесты (требует запущенный Docker)
 dotnet test tests/FastIntegrationTests.Tests
 
-# Запустить с подробным выводом
-dotnet test tests/FastIntegrationTests.Tests --verbosity normal
-
-# Запустить только IntegreSQL-тесты или только Testcontainers-тесты
+# Запустить только IntegreSQL или только Testcontainers (bash / Git Bash)
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
+
+# С повторами — сравнение производительности (bash)
+TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
+TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
+
+# PowerShell
+$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
+$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
+
+# Переопределить количество потоков прямо из CLI
+TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL" -- xUnit.MaxParallelThreads=8
 
 # Запустить тесты отдельного класса
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceTests"
