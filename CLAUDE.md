@@ -35,17 +35,23 @@ dotnet ef database update \
 # Запустить все тесты (требует запущенный Docker)
 dotnet test tests/FastIntegrationTests.Tests
 
-# Запустить только IntegreSQL или только Testcontainers (bash / Git Bash)
+# Запустить один подход (bash / Git Bash)
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
 
 # С повторами — сравнение производительности (bash)
 TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
 TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
+TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
 
 # PowerShell
 $env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
 $env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
+$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
+
+# Только накладные расходы инфраструктуры (пустые тесты, измеряют InitializeAsync)
+TEST_REPEAT=100 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Overhead"
 
 # Переопределить количество потоков прямо из CLI
 TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL" -- xUnit.MaxParallelThreads=8
