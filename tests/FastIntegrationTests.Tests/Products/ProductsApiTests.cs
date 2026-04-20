@@ -2,17 +2,10 @@ namespace FastIntegrationTests.Tests.Products;
 
 /// <summary>
 /// Интеграционные тесты HTTP-уровня для ProductsController.
-/// Каждый тест работает с изолированной базой данных через реальный HTTP-клиент.
+/// Каждый тест получает изолированный клон БД через IntegreSQL (~5 мс) и отдельный TestServer.
 /// </summary>
-[Collection("ProductsApi")]
-public class ProductsApiTests : ApiTestBase
+public class ProductsApiTests : ComponentTestBase
 {
-    /// <summary>
-    /// Создаёт новый экземпляр <see cref="ProductsApiTests"/>.
-    /// </summary>
-    /// <param name="fixture">Контейнер PostgreSQL/MSSQL, общий для коллекции.</param>
-    public ProductsApiTests(ContainerFixture fixture) : base(fixture) { }
-
     /// <summary>
     /// GET /api/products при пустой базе возвращает 200 и пустой массив.
     /// </summary>

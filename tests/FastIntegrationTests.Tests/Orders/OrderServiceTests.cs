@@ -3,16 +3,26 @@ namespace FastIntegrationTests.Tests.Orders;
 /// <summary>
 /// Интеграционные тесты сервисного уровня для OrderService.
 /// Проверяют CRUD, расчёт суммы, фиксацию цены и все переходы статусов.
+/// Каждый тест получает изолированный клон БД через IntegreSQL (~5 мс).
 /// </summary>
-public class OrderServiceTests : ServiceTestBase
+public class OrderServiceTests : AppServiceTestBase
 {
-    /// <param name="fixture">Контейнер PostgreSQL/MSSQL, общий для коллекции.</param>
-    public OrderServiceTests(ContainerFixture fixture) : base(fixture) { }
+    private IOrderService Sut = null!;
+    private IProductService _products = null!;
+
+    /// <inheritdoc/>
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        var productRepo = new ProductRepository(Context);
+        _products = new ProductService(productRepo);
+        Sut = new OrderService(new OrderRepository(Context), productRepo);
+    }
 
     [Fact]
     public async Task GetAllAsync_WhenNoOrders_ReturnsEmptyList()
     {
-        var result = await OrderService.GetAllAsync();
+        var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
@@ -20,17 +30,17 @@ public class OrderServiceTests : ServiceTestBase
     [Fact]
     public async Task GetAllAsync_WhenOrdersExist_ReturnsAllOrders()
     {
-        var product = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
-        await OrderService.CreateAsync(new CreateOrderRequest
+        var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
+        await Sut.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 1 } }
         });
-        await OrderService.CreateAsync(new CreateOrderRequest
+        await Sut.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 2 } }
         });
 
-        var result = await OrderService.GetAllAsync();
+        var result = await Sut.GetAllAsync();
 
         Assert.Equal(2, result.Count);
     }
@@ -38,13 +48,13 @@ public class OrderServiceTests : ServiceTestBase
     [Fact]
     public async Task GetByIdAsync_WhenOrderExists_ReturnsOrderWithItems()
     {
-        var product = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 500m });
-        var created = await OrderService.CreateAsync(new CreateOrderRequest
+        var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 500m });
+        var created = await Sut.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 3 } }
         });
 
-        var result = await OrderService.GetByIdAsync(created.Id);
+        var result = await Sut.GetByIdAsync(created.Id);
 
         Assert.Equal(created.Id, result.Id);
         Assert.Single(result.Items);
@@ -55,16 +65,16 @@ public class OrderServiceTests : ServiceTestBase
     [Fact]
     public async Task GetByIdAsync_WhenOrderNotFound_ThrowsNotFoundException()
     {
-        await Assert.ThrowsAsync<NotFoundException>(() => OrderService.GetByIdAsync(999));
+        await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(999));
     }
 
     [Fact]
     public async Task CreateAsync_CalculatesTotalAmountCorrectly()
     {
-        var product1 = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар 1", Price = 100m });
-        var product2 = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар 2", Price = 200m });
+        var product1 = await _products.CreateAsync(new CreateProductRequest { Name = "Товар 1", Price = 100m });
+        var product2 = await _products.CreateAsync(new CreateProductRequest { Name = "Товар 2", Price = 200m });
 
-        var order = await OrderService.CreateAsync(new CreateOrderRequest
+        var order = await Sut.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest>
             {
@@ -79,9 +89,9 @@ public class OrderServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateAsync_SetsUnitPriceFromCurrentProductPrice()
     {
-        var product = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 999m });
+        var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 999m });
 
-        var order = await OrderService.CreateAsync(new CreateOrderRequest
+        var order = await Sut.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 1 } }
         });
@@ -92,7 +102,7 @@ public class OrderServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateAsync_WhenProductNotFound_ThrowsNotFoundException()
     {
-        await Assert.ThrowsAsync<NotFoundException>(() => OrderService.CreateAsync(new CreateOrderRequest
+        await Assert.ThrowsAsync<NotFoundException>(() => Sut.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = 999, Quantity = 1 } }
         }));
@@ -101,9 +111,9 @@ public class OrderServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateAsync_NewOrderHasStatusNew()
     {
-        var product = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
+        var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
 
-        var order = await OrderService.CreateAsync(new CreateOrderRequest
+        var order = await Sut.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 1 } }
         });
@@ -116,7 +126,7 @@ public class OrderServiceTests : ServiceTestBase
     {
         var order = await CreateOrderAsync();
 
-        var confirmed = await OrderService.ConfirmAsync(order.Id);
+        var confirmed = await Sut.ConfirmAsync(order.Id);
 
         Assert.Equal(OrderStatus.Confirmed, confirmed.Status);
     }
@@ -125,9 +135,9 @@ public class OrderServiceTests : ServiceTestBase
     public async Task ShipAsync_ChangesStatusFromConfirmedToShipped()
     {
         var order = await CreateOrderAsync();
-        await OrderService.ConfirmAsync(order.Id);
+        await Sut.ConfirmAsync(order.Id);
 
-        var shipped = await OrderService.ShipAsync(order.Id);
+        var shipped = await Sut.ShipAsync(order.Id);
 
         Assert.Equal(OrderStatus.Shipped, shipped.Status);
     }
@@ -136,10 +146,10 @@ public class OrderServiceTests : ServiceTestBase
     public async Task CompleteAsync_ChangesStatusFromShippedToCompleted()
     {
         var order = await CreateOrderAsync();
-        await OrderService.ConfirmAsync(order.Id);
-        await OrderService.ShipAsync(order.Id);
+        await Sut.ConfirmAsync(order.Id);
+        await Sut.ShipAsync(order.Id);
 
-        var completed = await OrderService.CompleteAsync(order.Id);
+        var completed = await Sut.CompleteAsync(order.Id);
 
         Assert.Equal(OrderStatus.Completed, completed.Status);
     }
@@ -149,7 +159,7 @@ public class OrderServiceTests : ServiceTestBase
     {
         var order = await CreateOrderAsync();
 
-        var cancelled = await OrderService.CancelAsync(order.Id);
+        var cancelled = await Sut.CancelAsync(order.Id);
 
         Assert.Equal(OrderStatus.Cancelled, cancelled.Status);
     }
@@ -158,9 +168,9 @@ public class OrderServiceTests : ServiceTestBase
     public async Task CancelAsync_ChangesStatusFromConfirmedToCancelled()
     {
         var order = await CreateOrderAsync();
-        await OrderService.ConfirmAsync(order.Id);
+        await Sut.ConfirmAsync(order.Id);
 
-        var cancelled = await OrderService.CancelAsync(order.Id);
+        var cancelled = await Sut.CancelAsync(order.Id);
 
         Assert.Equal(OrderStatus.Cancelled, cancelled.Status);
     }
@@ -169,23 +179,23 @@ public class OrderServiceTests : ServiceTestBase
     public async Task ConfirmAsync_WhenOrderIsCompleted_ThrowsInvalidOrderStatusTransitionException()
     {
         var order = await CreateOrderAsync();
-        await OrderService.ConfirmAsync(order.Id);
-        await OrderService.ShipAsync(order.Id);
-        await OrderService.CompleteAsync(order.Id);
+        await Sut.ConfirmAsync(order.Id);
+        await Sut.ShipAsync(order.Id);
+        await Sut.CompleteAsync(order.Id);
 
         await Assert.ThrowsAsync<InvalidOrderStatusTransitionException>(
-            () => OrderService.ConfirmAsync(order.Id));
+            () => Sut.ConfirmAsync(order.Id));
     }
 
     [Fact]
     public async Task CancelAsync_WhenOrderIsShipped_ThrowsInvalidOrderStatusTransitionException()
     {
         var order = await CreateOrderAsync();
-        await OrderService.ConfirmAsync(order.Id);
-        await OrderService.ShipAsync(order.Id);
+        await Sut.ConfirmAsync(order.Id);
+        await Sut.ShipAsync(order.Id);
 
         await Assert.ThrowsAsync<InvalidOrderStatusTransitionException>(
-            () => OrderService.CancelAsync(order.Id));
+            () => Sut.CancelAsync(order.Id));
     }
 
     [Fact]
@@ -194,17 +204,17 @@ public class OrderServiceTests : ServiceTestBase
         var order = await CreateOrderAsync();
         Assert.Equal(OrderStatus.New, order.Status);
 
-        var confirmed = await OrderService.ConfirmAsync(order.Id);
+        var confirmed = await Sut.ConfirmAsync(order.Id);
         Assert.Equal(OrderStatus.Confirmed, confirmed.Status);
 
-        var shipped = await OrderService.ShipAsync(order.Id);
+        var shipped = await Sut.ShipAsync(order.Id);
         Assert.Equal(OrderStatus.Shipped, shipped.Status);
 
-        var completed = await OrderService.CompleteAsync(order.Id);
+        var completed = await Sut.CompleteAsync(order.Id);
         Assert.Equal(OrderStatus.Completed, completed.Status);
 
         // Проверяем финальный статус через повторный запрос
-        var fetched = await OrderService.GetByIdAsync(order.Id);
+        var fetched = await Sut.GetByIdAsync(order.Id);
         Assert.Equal(OrderStatus.Completed, fetched.Status);
     }
 
@@ -216,8 +226,8 @@ public class OrderServiceTests : ServiceTestBase
     /// <param name="ct">Токен отмены операции.</param>
     private async Task<OrderDto> CreateOrderAsync(CancellationToken ct = default)
     {
-        var product = await ProductService.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m }, ct);
-        return await OrderService.CreateAsync(new CreateOrderRequest
+        var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m }, ct);
+        return await Sut.CreateAsync(new CreateOrderRequest
         {
             Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 1 } }
         }, ct);
