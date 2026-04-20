@@ -20,8 +20,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.4.0" />
-    <PackageReference Include="Testcontainers.MsSql" Version="4.4.0" />
-    <PackageReference Include="MccSoft.IntegreSql.EF" Version="0.12.2" />
+<PackageReference Include="MccSoft.IntegreSql.EF" Version="0.12.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
   </ItemGroup>

@@ -7,7 +7,7 @@ namespace FastIntegrationTests.Tests.Infrastructure.Base;
 public abstract class ApiTestBase : IAsyncLifetime
 {
     private readonly ContainerFixture _fixture;
-    private ShopDbContext _schemaContext = null!;
+    private ShopDbContext _context = null!;
     private TestWebApplicationFactory _factory = null!;
 
     /// <summary>HTTP-клиент для обращений к тестируемому API.</summary>
@@ -24,21 +24,21 @@ public abstract class ApiTestBase : IAsyncLifetime
     {
         // Создаём изолированную БД и применяем миграции
         var dbFactory = new TestDbFactory(_fixture);
-        _schemaContext = await dbFactory.CreateAsync();
+        _context = await dbFactory.CreateAsync();
 
         // Передаём строку подключения к уже готовой БД в фабрику приложения
-        var connectionString = _schemaContext.Database.GetConnectionString()!;
-        _factory = new TestWebApplicationFactory(_fixture.Provider, connectionString);
+        var connectionString = _context.Database.GetConnectionString()!;
+        _factory = new TestWebApplicationFactory(connectionString);
         Client = _factory.CreateClient();
     }
 
     /// <inheritdoc />
     public async Task DisposeAsync()
     {
-        if (_schemaContext is null) return;
+        if (_context is null) return;
         Client?.Dispose();
         if (_factory is not null) await _factory.DisposeAsync();
-        await _schemaContext.Database.EnsureDeletedAsync();
-        await _schemaContext.DisposeAsync();
+        await _context.Database.EnsureDeletedAsync();
+        await _context.DisposeAsync();
     }
 }

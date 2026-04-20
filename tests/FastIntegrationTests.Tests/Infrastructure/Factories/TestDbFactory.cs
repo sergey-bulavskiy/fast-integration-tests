@@ -23,28 +23,13 @@ public sealed class TestDbFactory
     {
         var dbName = $"test_{Guid.NewGuid():N}";
 
-        DbContextOptions<ShopDbContext> options;
-
-        if (_fixture.Provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+        var csb = new NpgsqlConnectionStringBuilder(_fixture.ConnectionString)
         {
-            var csb = new NpgsqlConnectionStringBuilder(_fixture.ConnectionString)
-            {
-                Database = dbName
-            };
-            options = new DbContextOptionsBuilder<ShopDbContext>()
-                .UseNpgsql(csb.ConnectionString)
-                .Options;
-        }
-        else
-        {
-            var csb = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(_fixture.ConnectionString)
-            {
-                InitialCatalog = dbName
-            };
-            options = new DbContextOptionsBuilder<ShopDbContext>()
-                .UseSqlServer(csb.ConnectionString)
-                .Options;
-        }
+            Database = dbName
+        };
+        var options = new DbContextOptionsBuilder<ShopDbContext>()
+            .UseNpgsql(csb.ConnectionString)
+            .Options;
 
         var context = new ShopDbContext(options);
         try

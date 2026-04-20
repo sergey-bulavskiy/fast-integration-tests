@@ -10,36 +10,32 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace FastIntegrationTests.Tests.Infrastructure.WebApp;
 
 /// <summary>
-/// WebApplicationFactory с подменой строки подключения к БД.
-/// Переопределяет DatabaseProvider и ConnectionStrings через ConfigureAppConfiguration,
-/// а также заменяет регистрацию DbContext через ConfigureTestServices.
+/// WebApplicationFactory с подменой строки подключения к PostgreSQL.
+/// Переопределяет ConnectionStrings через ConfigureAppConfiguration
+/// и заменяет регистрацию DbContext через ConfigureTestServices.
 /// </summary>
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private readonly string _provider;
     private readonly string _connectionString;
 
     /// <summary>
     /// Создаёт новый экземпляр <see cref="TestWebApplicationFactory"/>.
     /// </summary>
-    /// <param name="provider">Провайдер БД: "PostgreSQL" или "MSSQL".</param>
-    /// <param name="connectionString">Строка подключения к тестовой БД.</param>
-    public TestWebApplicationFactory(string provider, string connectionString)
+    /// <param name="connectionString">Строка подключения к тестовой БД PostgreSQL.</param>
+    public TestWebApplicationFactory(string connectionString)
     {
-        _provider = provider;
         _connectionString = connectionString;
     }
 
     /// <inheritdoc />
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Подменяем конфигурацию: Program.cs читает DatabaseProvider и ConnectionStrings из builder.Configuration
+        // Подменяем строку подключения: Program.cs читает ConnectionStrings:PostgreSQL
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["DatabaseProvider"] = _provider,
-                [$"ConnectionStrings:{_provider}"] = _connectionString,
+                ["ConnectionStrings:PostgreSQL"] = _connectionString,
             });
         });
 
@@ -48,11 +44,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<ShopDbContext>>();
             services.RemoveAll<ShopDbContext>();
-
-            if (_provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
-                services.AddDbContext<ShopDbContext>(o => o.UseNpgsql(_connectionString));
-            else
-                services.AddDbContext<ShopDbContext>(o => o.UseSqlServer(_connectionString));
+            services.AddDbContext<ShopDbContext>(o => o.UseNpgsql(_connectionString));
         });
     }
 }

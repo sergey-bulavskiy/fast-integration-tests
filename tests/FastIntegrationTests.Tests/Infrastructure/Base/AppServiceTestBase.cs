@@ -1,5 +1,6 @@
 using FastIntegrationTests.Tests.Infrastructure.IntegreSQL;
 using MccSoft.IntegreSql.EF;
+using Npgsql;
 
 namespace FastIntegrationTests.Tests.Infrastructure.Base;
 
@@ -12,37 +13,28 @@ public abstract class AppServiceTestBase : IAsyncLifetime
 {
     private string _connectionString = null!;
     private NpgsqlDatabaseInitializer _initializer = null!;
-    private ShopDbContext _context = null!;
 
-    /// <summary>Сервис для работы с товарами.</summary>
-    protected IProductService ProductService { get; private set; } = null!;
+    /// <summary>Контекст тестовой БД. Доступен после InitializeAsync.</summary>
+    protected ShopDbContext Context { get; private set; } = null!;
 
-    /// <summary>Сервис для работы с заказами.</summary>
-    protected IOrderService OrderService { get; private set; } = null!;
-
-    /// <inheritdoc/>
-    public async Task InitializeAsync()
+    /// <summary>Инициализирует тестовую БД: запускает контейнеры (при первом вызове) и клонирует шаблон.</summary>
+    public virtual async Task InitializeAsync()
     {
         var state = await IntegresSqlContainerManager.GetStateAsync();
         _initializer = state.Initializer;
         _connectionString = await _initializer.CreateDatabaseGetConnectionString<ShopDbContext>(
             IntegresSqlDefaults.SeedingOptions);
-
         var options = new DbContextOptionsBuilder<ShopDbContext>()
-            .UseNpgsql(_connectionString)
-            .Options;
-        _context = new ShopDbContext(options);
-
-        var productRepo = new ProductRepository(_context);
-        var orderRepo = new OrderRepository(_context);
-        ProductService = new ProductService(productRepo);
-        OrderService = new OrderService(orderRepo, productRepo);
+            .UseNpgsql(_connectionString).Options;
+        Context = new ShopDbContext(options);
     }
 
-    /// <inheritdoc/>
-    public async Task DisposeAsync()
+    /// <summary>Освобождает контекст и возвращает клонированную БД в пул IntegreSQL.</summary>
+    public virtual async Task DisposeAsync()
     {
-        await _context.DisposeAsync();
+        await Context.DisposeAsync();
+        await using var conn = new NpgsqlConnection(_connectionString);
+        NpgsqlConnection.ClearPool(conn);
         await _initializer.RemoveDatabase(_connectionString);
     }
 }
