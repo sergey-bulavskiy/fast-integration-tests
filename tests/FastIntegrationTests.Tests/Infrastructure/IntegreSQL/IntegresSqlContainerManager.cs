@@ -33,6 +33,7 @@ public static class IntegresSqlContainerManager
             .WithImage("postgres:16-alpine")
             .WithNetwork(network)
             .WithNetworkAliases("postgres")
+            .WithCommand("-c", "max_connections=500")
             .Build();
         await pgContainer.StartAsync();
 
