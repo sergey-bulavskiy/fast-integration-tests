@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Products;
+namespace FastIntegrationTests.Tests.IntegreSQL.Products;
 
 /// <summary>
 /// Дымовые HTTP-тесты через IntegreSQL.

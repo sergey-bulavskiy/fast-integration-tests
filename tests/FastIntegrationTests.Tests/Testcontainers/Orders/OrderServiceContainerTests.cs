@@ -1,23 +1,22 @@
-namespace FastIntegrationTests.Tests.Orders;
+namespace FastIntegrationTests.Tests.Testcontainers.Orders;
 
 /// <summary>
-/// Интеграционные тесты сервисного уровня для OrderService.
+/// Интеграционные тесты сервисного уровня для OrderService через Testcontainers.
+/// Используются как baseline для сравнения скорости с IntegreSQL-вариантом (<see cref="OrderServiceTests"/>).
 /// Проверяют CRUD, расчёт суммы, фиксацию цены и все переходы статусов.
-/// Каждый тест получает изолированный клон БД через IntegreSQL (~5 мс).
+/// Каждый тест создаёт изолированную БД в реальном контейнере PostgreSQL.
 /// </summary>
-public class OrderServiceTests : AppServiceTestBase
+[Collection("OrdersServiceContainer")]
+public class OrderServiceContainerTests : ServiceTestBase
 {
-    private IOrderService Sut = null!;
-    private IProductService _products = null!;
+    private IOrderService Sut => OrderService;
+    private IProductService _products => ProductService;
 
-    /// <inheritdoc/>
-    public override async Task InitializeAsync()
-    {
-        await base.InitializeAsync();
-        var productRepo = new ProductRepository(Context);
-        _products = new ProductService(productRepo);
-        Sut = new OrderService(new OrderRepository(Context), productRepo);
-    }
+    /// <summary>
+    /// Создаёт новый экземпляр <see cref="OrderServiceContainerTests"/>.
+    /// </summary>
+    /// <param name="fixture">Запущенный контейнер с СУБД.</param>
+    public OrderServiceContainerTests(ContainerFixture fixture) : base(fixture) { }
 
     [Fact]
     public async Task GetAllAsync_WhenNoOrders_ReturnsEmptyList()
