@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Products;
+namespace FastIntegrationTests.Tests.IntegreSQL.Products;
 
 /// <summary>
 /// Дымовые тесты сервисного уровня через IntegreSQL.

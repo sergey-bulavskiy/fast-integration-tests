@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Products;
+namespace FastIntegrationTests.Tests.Testcontainers.Products;
 
 /// <summary>
 /// Интеграционные тесты сервисного уровня для ProductService через Testcontainers.

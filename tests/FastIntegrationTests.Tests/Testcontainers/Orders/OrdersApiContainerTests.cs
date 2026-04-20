@@ -1,11 +1,19 @@
-namespace FastIntegrationTests.Tests.Orders;
+namespace FastIntegrationTests.Tests.Testcontainers.Orders;
 
 /// <summary>
-/// Интеграционные тесты HTTP-уровня для OrdersController.
+/// Интеграционные тесты HTTP-уровня для OrdersController через Testcontainers.
+/// Используются как baseline для сравнения скорости с IntegreSQL-вариантом (<see cref="OrdersApiTests"/>).
 /// Проверяют HTTP-статусы, тела ответов и полный жизненный цикл заказа.
 /// </summary>
-public class OrdersApiTests : ComponentTestBase
+[Collection("OrdersApiContainer")]
+public class OrdersApiContainerTests : ApiTestBase
 {
+    /// <summary>
+    /// Создаёт новый экземпляр <see cref="OrdersApiContainerTests"/>.
+    /// </summary>
+    /// <param name="fixture">Запущенный контейнер с СУБД.</param>
+    public OrdersApiContainerTests(ContainerFixture fixture) : base(fixture) { }
+
     [Fact]
     public async Task GetAll_WhenNoOrders_Returns200WithEmptyArray()
     {
