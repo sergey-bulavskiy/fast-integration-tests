@@ -38,6 +38,10 @@ dotnet test tests/FastIntegrationTests.Tests
 # Запустить с подробным выводом
 dotnet test tests/FastIntegrationTests.Tests --verbosity normal
 
+# Запустить только IntegreSQL-тесты или только Testcontainers-тесты
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
+
 # Запустить тесты отдельного класса
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceTests"
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductsApiTests"
@@ -50,7 +54,7 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Orders
 - **Требование:** Docker должен быть запущен. Testcontainers автоматически поднимает контейнеры PostgreSQL и IntegreSQL.
 - **Изоляция:** каждый тест получает клон шаблонной БД через IntegreSQL (~5 мс), применяет бизнес-операции, возвращает базу после завершения.
 - **Параллелизм:** тест-классы выполняются параллельно (`maxParallelThreads = 4` в `xunit.runner.json`).
-- **Инфраструктура скрыта:** тесты работают только через `IProductService` / `IOrderService` (сервисный уровень) или `HttpClient` (HTTP-уровень). Создание и удаление базы данных происходит в базовых классах `AppServiceTestBase` / `ComponentTestBase`.
+- **Инфраструктура скрыта:** тесты работают только через `IProductService` / `IOrderService` (сервисный уровень) или `HttpClient` (HTTP-уровень). Создание и удаление базы данных происходит в базовых классах `AppServiceTestBase` / `ComponentTestBase` (IntegreSQL) и `ContainerServiceTestBase` / `ContainerApiTestBase` (Testcontainers).
 
 ## Архитектура
 

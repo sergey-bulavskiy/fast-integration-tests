@@ -5,8 +5,7 @@ namespace FastIntegrationTests.Tests.Testcontainers.Products;
 /// Используются как baseline для сравнения скорости с IntegreSQL-вариантом (<see cref="ProductsApiTests"/>).
 /// Каждый тест создаёт изолированную БД в реальном контейнере PostgreSQL и отдельный TestServer.
 /// </summary>
-[Collection("ProductsApiContainer")]
-public class ProductsApiContainerTests : ApiTestBase
+public class ProductsApiContainerTests : ContainerApiTestBase
 {
     /// <summary>
     /// Создаёт новый экземпляр <see cref="ProductsApiContainerTests"/>.

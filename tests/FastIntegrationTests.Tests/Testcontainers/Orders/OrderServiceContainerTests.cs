@@ -6,8 +6,7 @@ namespace FastIntegrationTests.Tests.Testcontainers.Orders;
 /// Проверяют CRUD, расчёт суммы, фиксацию цены и все переходы статусов.
 /// Каждый тест создаёт изолированную БД в реальном контейнере PostgreSQL.
 /// </summary>
-[Collection("OrdersServiceContainer")]
-public class OrderServiceContainerTests : ServiceTestBase
+public class OrderServiceContainerTests : ContainerServiceTestBase
 {
     private IOrderService Sut => OrderService;
     private IProductService _products => ProductService;

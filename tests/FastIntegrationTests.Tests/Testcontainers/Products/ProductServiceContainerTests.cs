@@ -5,8 +5,7 @@ namespace FastIntegrationTests.Tests.Testcontainers.Products;
 /// Используются как baseline для сравнения скорости с IntegreSQL-вариантом (<see cref="ProductServiceTests"/>).
 /// Каждый тест создаёт изолированную БД в реальном контейнере PostgreSQL.
 /// </summary>
-[Collection("ProductsServiceContainer")]
-public class ProductServiceContainerTests : ServiceTestBase
+public class ProductServiceContainerTests : ContainerServiceTestBase
 {
     private IProductService Sut => ProductService;
     private IOrderService _orders => OrderService;

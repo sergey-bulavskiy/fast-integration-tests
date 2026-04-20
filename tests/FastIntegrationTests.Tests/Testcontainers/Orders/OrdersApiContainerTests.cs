@@ -5,8 +5,7 @@ namespace FastIntegrationTests.Tests.Testcontainers.Orders;
 /// Используются как baseline для сравнения скорости с IntegreSQL-вариантом (<see cref="OrdersApiTests"/>).
 /// Проверяют HTTP-статусы, тела ответов и полный жизненный цикл заказа.
 /// </summary>
-[Collection("OrdersApiContainer")]
-public class OrdersApiContainerTests : ApiTestBase
+public class OrdersApiContainerTests : ContainerApiTestBase
 {
     /// <summary>
     /// Создаёт новый экземпляр <see cref="OrdersApiContainerTests"/>.
