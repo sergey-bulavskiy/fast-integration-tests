@@ -36,7 +36,7 @@ CREATE INDEX ""IX_OrderStatsByDay_OrderCount"" ON ""OrderStatisticsByDay"" (""Or
 CREATE OR REPLACE FUNCTION refresh_order_statistics()
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY ""OrderStatisticsByDay"";
+    REFRESH MATERIALIZED VIEW ""OrderStatisticsByDay"";
 END;
 $$;
 ");
