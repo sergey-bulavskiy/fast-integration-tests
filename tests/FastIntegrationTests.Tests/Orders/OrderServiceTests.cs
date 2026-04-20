@@ -4,7 +4,6 @@ namespace FastIntegrationTests.Tests.Orders;
 /// Интеграционные тесты сервисного уровня для OrderService.
 /// Проверяют CRUD, расчёт суммы, фиксацию цены и все переходы статусов.
 /// </summary>
-[Collection("OrdersService")]
 public class OrderServiceTests : ServiceTestBase
 {
     /// <param name="fixture">Контейнер PostgreSQL/MSSQL, общий для коллекции.</param>

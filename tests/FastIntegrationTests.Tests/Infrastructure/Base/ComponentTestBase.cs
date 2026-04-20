@@ -1,5 +1,6 @@
 using FastIntegrationTests.Tests.Infrastructure.IntegreSQL;
 using MccSoft.IntegreSql.EF;
+using Npgsql;
 
 namespace FastIntegrationTests.Tests.Infrastructure.Base;
 
@@ -34,6 +35,8 @@ public abstract class ComponentTestBase : IAsyncLifetime
     {
         Client?.Dispose();
         if (_factory is not null) await _factory.DisposeAsync();
+        await using var conn = new NpgsqlConnection(_connectionString);
+        NpgsqlConnection.ClearPool(conn);
         await _initializer.RemoveDatabase(_connectionString);
     }
 }

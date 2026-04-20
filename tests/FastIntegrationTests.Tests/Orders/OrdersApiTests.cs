@@ -4,12 +4,8 @@ namespace FastIntegrationTests.Tests.Orders;
 /// Интеграционные тесты HTTP-уровня для OrdersController.
 /// Проверяют HTTP-статусы, тела ответов и полный жизненный цикл заказа.
 /// </summary>
-[Collection("OrdersApi")]
-public class OrdersApiTests : ApiTestBase
+public class OrdersApiTests : ComponentTestBase
 {
-    /// <param name="fixture">Контейнер PostgreSQL/MSSQL, общий для коллекции.</param>
-    public OrdersApiTests(ContainerFixture fixture) : base(fixture) { }
-
     [Fact]
     public async Task GetAll_WhenNoOrders_Returns200WithEmptyArray()
     {
