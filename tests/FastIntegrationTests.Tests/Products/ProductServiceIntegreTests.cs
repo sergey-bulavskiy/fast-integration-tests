@@ -6,13 +6,23 @@ namespace FastIntegrationTests.Tests.Products;
 /// </summary>
 public class ProductServiceIntegreTests : AppServiceTestBase
 {
+    private IProductService _productService = null!;
+
+    /// <inheritdoc/>
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        var productRepo = new ProductRepository(Context);
+        _productService = new ProductService(productRepo);
+    }
+
     /// <summary>
     /// GetAllAsync при пустой базе возвращает пустой список.
     /// </summary>
     [Fact]
     public async Task GetAllAsync_WhenNoProducts_ReturnsEmptyList()
     {
-        var result = await ProductService.GetAllAsync();
+        var result = await _productService.GetAllAsync();
 
         Assert.Empty(result);
     }
@@ -30,7 +40,7 @@ public class ProductServiceIntegreTests : AppServiceTestBase
             Price = 50_000m
         };
 
-        var result = await ProductService.CreateAsync(request);
+        var result = await _productService.CreateAsync(request);
 
         Assert.True(result.Id > 0);
         Assert.Equal("Ноутбук", result.Name);
