@@ -42,21 +42,6 @@ dotnet run --project src/FastIntegrationTests.WebApi
 
 ---
 
-## Переключение провайдера БД
-
-В `appsettings.Development.json` установить `"DatabaseProvider"` в `"PostgreSQL"` или `"MSSQL"` и заполнить соответствующую строку подключения.
-
-**Внимание:** текущие миграции сгенерированы под PostgreSQL. При переключении на MSSQL потребуется пересоздать миграции (известное ограничение учебного проекта).
-
-```bash
-# Поднять MSSQL
-docker-compose up mssql -d
-# Строка подключения для MSSQL:
-# "Server=localhost,1433;Database=shop;User Id=sa;Password=Strong!Pass1;TrustServerCertificate=true"
-```
-
----
-
 ## API
 
 ### Products
@@ -95,44 +80,34 @@ New → Confirmed → Shipped → Completed
 Docker должен быть запущен. Testcontainers автоматически поднимает контейнер с базой данных — вручную ничего поднимать не нужно.
 
 ```bash
-# Запустить все 53 теста
+# Запустить все 57 тестов
 dotnet test tests/FastIntegrationTests.Tests
 
 # С подробным выводом (видны имена тестов и SQL-запросы)
 dotnet test tests/FastIntegrationTests.Tests --verbosity normal
 
-# Запустить отдельную коллекцию
-dotnet test tests/FastIntegrationTests.Tests --filter "Collection=ProductsService"
-dotnet test tests/FastIntegrationTests.Tests --filter "Collection=ProductsApi"
-dotnet test tests/FastIntegrationTests.Tests --filter "Collection=OrdersService"
-dotnet test tests/FastIntegrationTests.Tests --filter "Collection=OrdersApi"
+# Запустить тесты отдельного класса
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductsApiTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrderServiceTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiTests"
 ```
 
 ### Что тестируется
 
-| Коллекция | Уровень | Тестов | Описание |
-|-----------|---------|--------|----------|
-| `ProductsService` | Сервисный | 11 | CRUD через `IProductService` |
-| `ProductsApi` | HTTP | 10 | CRUD через `HttpClient` → `/api/products` |
-| `OrdersService` | Сервисный | 16 | Создание, расчёт суммы, все переходы статусов |
-| `OrdersApi` | HTTP | 16 | Все эндпоинты заказов, переходы статусов, полный цикл |
+| Класс | Уровень | Тестов | Инфраструктура |
+|-------|---------|--------|----------------|
+| `ProductServiceTests` | Сервисный | 11 | IntegreSQL |
+| `ProductsApiTests` | HTTP | 10 | IntegreSQL |
+| `OrderServiceTests` | Сервисный | 16 | IntegreSQL |
+| `OrdersApiTests` | HTTP | 16 | IntegreSQL |
 
 ### Как устроена изоляция
 
-- Каждый тест создаёт базу `test_{guid}` внутри Testcontainers-контейнера.
-- Миграции применяются через EF Core (`MigrateAsync`) в `InitializeAsync`.
-- База удаляется в `DisposeAsync`.
-- Четыре коллекции выполняются параллельно: по одному контейнеру на коллекцию.
-
-### Провайдер БД для тестов
-
-Определяется в `tests/FastIntegrationTests.Tests/appsettings.json`:
-
-```json
-{ "DatabaseProvider": "PostgreSQL" }
-```
-
-Замените на `"MSSQL"` чтобы тесты запускались на Microsoft SQL Server.
+- Миграции применяются один раз как шаблонная БД (IntegreSQL).
+- Каждый тест получает клон шаблона (~5 мс) вместо полного поднятия БД.
+- Клон возвращается в пул в `DisposeAsync`.
+- Тест-классы выполняются параллельно (`maxParallelThreads = 4`).
 
 ---
 
@@ -149,7 +124,7 @@ tests/
     ├── Infrastructure/
     │   ├── Fixtures/     # ContainerFixture — Testcontainers lifecycle
     │   ├── Factories/    # TestDbFactory — создаёт изолированную БД на тест
-    │   ├── Base/         # ServiceTestBase, ApiTestBase
+    │   ├── Base/         # AppServiceTestBase, ComponentTestBase, ServiceTestBase, ApiTestBase
     │   └── WebApp/       # TestWebApplicationFactory
     ├── Products/         # ProductServiceTests, ProductsApiTests
     └── Orders/           # OrderServiceTests, OrdersApiTests

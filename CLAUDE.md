@@ -32,25 +32,25 @@ dotnet ef database update \
 ## Интеграционные тесты
 
 ```bash
-# Запустить все 53 теста (требует запущенный Docker)
+# Запустить все 57 тестов (требует запущенный Docker)
 dotnet test tests/FastIntegrationTests.Tests
 
 # Запустить с подробным выводом
 dotnet test tests/FastIntegrationTests.Tests --verbosity normal
 
-# Запустить отдельную коллекцию
-dotnet test tests/FastIntegrationTests.Tests --filter "Collection=ProductsService"
-dotnet test tests/FastIntegrationTests.Tests --filter "Collection=ProductsApi"
-dotnet test tests/FastIntegrationTests.Tests --filter "Collection=OrdersService"
-dotnet test tests/FastIntegrationTests.Tests --filter "Collection=OrdersApi"
+# Запустить тесты отдельного класса
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductsApiTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrderServiceTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiTests"
 ```
 
 ### Как работают тесты
 
-- **Требование:** Docker должен быть запущен. Testcontainers автоматически поднимает контейнер PostgreSQL.
-- **Изоляция:** каждый тест создаёт отдельную базу `test_{guid}`, применяет миграции через EF Core, удаляет базу после завершения.
-- **Параллелизм:** 4 xUnit-коллекции выполняются параллельно (`maxParallelThreads = 4` в `xunit.runner.json`).
-- **Инфраструктура скрыта:** тесты работают только через `IProductService` / `IOrderService` (сервисный уровень) или `HttpClient` (HTTP-уровень). Создание и удаление базы данных происходит в базовых классах `ServiceTestBase` / `ApiTestBase`.
+- **Требование:** Docker должен быть запущен. Testcontainers автоматически поднимает контейнеры PostgreSQL и IntegreSQL.
+- **Изоляция:** каждый тест получает клон шаблонной БД через IntegreSQL (~5 мс), применяет бизнес-операции, возвращает базу после завершения.
+- **Параллелизм:** тест-классы выполняются параллельно (`maxParallelThreads = 4` в `xunit.runner.json`).
+- **Инфраструктура скрыта:** тесты работают только через `IProductService` / `IOrderService` (сервисный уровень) или `HttpClient` (HTTP-уровень). Создание и удаление базы данных происходит в базовых классах `AppServiceTestBase` / `ComponentTestBase`.
 
 ## Архитектура
 
