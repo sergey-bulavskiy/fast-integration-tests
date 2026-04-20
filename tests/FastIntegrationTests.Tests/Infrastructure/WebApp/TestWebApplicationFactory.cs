@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace FastIntegrationTests.Tests.Infrastructure.WebApp;
 
@@ -30,6 +31,9 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// <inheritdoc />
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Подавляем вывод приложения во время тестов
+        builder.ConfigureLogging(logging => logging.ClearProviders());
+
         // Подменяем строку подключения: Program.cs читает ConnectionStrings:PostgreSQL
         builder.ConfigureAppConfiguration((_, config) =>
         {
