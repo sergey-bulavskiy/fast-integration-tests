@@ -30,6 +30,10 @@ public class GlobalExceptionHandler : IExceptionHandler
         {
             NotFoundException ex => (StatusCodes.Status404NotFound, ex.Message),
             InvalidOrderStatusTransitionException ex => (StatusCodes.Status400BadRequest, ex.Message),
+            DuplicateValueException ex => (StatusCodes.Status409Conflict, ex.Message),
+            InvalidRatingException ex => (StatusCodes.Status422UnprocessableEntity, ex.Message),
+            InvalidDiscountPercentException ex => (StatusCodes.Status422UnprocessableEntity, ex.Message),
+            InvalidStatusTransitionException ex => (StatusCodes.Status422UnprocessableEntity, ex.Message),
             _ => (0, string.Empty),
         };
 
