@@ -113,6 +113,47 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Orders
 
 Каждый скрипт выводит итоговое время выполнения в формате `мм:сс.ммм`.
 
+## Benchmark Runner
+
+Консольный инструмент для сравнительного бенчмарка трёх подходов по трём сценариям. Результат — `benchmark-results/report.html` с интерактивными Chart.js графиками.
+
+```bash
+# Запуск (Docker должен быть запущен, займёт 15–30 мин)
+dotnet run --project tools/BenchmarkRunner
+
+# Открыть отчёт после завершения
+start benchmark-results/report.html   # Windows
+open benchmark-results/report.html    # macOS
+```
+
+### Три сценария
+
+| Сценарий | Фиксируется | Варьируется |
+|---|---|---|
+| 1 — Влияние числа миграций | TEST_REPEAT=10, потоков=4 | 16 / 66 / 116 миграций |
+| 2 — Масштаб числа тестов | 16 миграций, потоков=4 | TEST_REPEAT: 1, 5, 10, 20, 50 |
+| 3 — Параллелизм | 16 миграций, TEST_REPEAT=20 | потоков: 1, 2, 4, 8 |
+
+Итого 36 точек данных (3+5+4 × 3 подхода). Фейковые миграции генерируются и удаляются автоматически — репозиторий возвращается в исходное состояние.
+
+### Выходные файлы
+
+- `benchmark-results/report.html` — HTML отчёт с тремя линейными графиками (gitignored)
+- `benchmark-results/results.json` — сырые данные для воспроизведения (gitignored)
+
+### Архитектура инструмента
+
+```
+tools/BenchmarkRunner/
+├── Program.cs                  — оркестрация трёх сценариев
+├── Models/                     — BenchmarkScenario, BenchmarkResult, BenchmarkReport
+├── Runner/TestRunner.cs        — запуск dotnet test через Process, замер времени
+├── Migrations/MigrationManager.cs — запись/удаление фейковых .cs миграций
+└── Report/
+    ├── ReportGenerator.cs      — сериализация JSON, инлайн в HTML шаблон
+    └── report-template.html    — Chart.js шаблон с плейсхолдером /*INJECT_JSON*/
+```
+
 ## Архитектура
 
 Трёхслойная архитектура:
@@ -142,21 +183,6 @@ cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/Fast
 - **Application не зависит от EF Core.** Проект `FastIntegrationTests.Application` не содержит ни одного `<PackageReference>` на EF Core или провайдеры БД. Добавление таких зависимостей — нарушение архитектуры.
 
 ## Идеи для развития бенчмарка
-
-### Нагенерировать пустые миграции
-
-Текущий разрыв между подходами измеряется на **одной миграции**. В реальных проектах их десятки — и разрыв растёт линейно: Testcontainers прогоняет все N миграций на каждый тест, IntegreSQL и Respawn — один раз. Чтобы честно показать это, добавить 50–100 пустых миграций:
-
-```bash
-for i in $(seq 1 50); do
-  dotnet ef migrations add Fake_Migration_$(printf "%03d" $i) \
-    --project src/FastIntegrationTests.Infrastructure \
-    --startup-project src/FastIntegrationTests.WebApi \
-    --output-dir Migrations
-done
-```
-
-Каждая пустая миграция добавляет ~5–20 мс к Testcontainers per-test, но не влияет на IntegreSQL и Respawn.
 
 ### Разноплановый набор тестов для честного бенчмарка
 
