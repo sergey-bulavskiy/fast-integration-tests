@@ -118,13 +118,69 @@ stdout/stderr пробрасываются в консоль в реальном
 
 ## MigrationManager
 
-Добавляет фейковые пустые миграции и откатывает их после замера:
+Пишет `.cs` файлы миграций **напрямую** в `src/FastIntegrationTests.Infrastructure/Migrations/` — без `dotnet ef migrations add` (он генерирует пустой `Up`/`Down`, после чего всё равно нужно редактировать файл). Фейковые миграции содержат только `migrationBuilder.Sql(...)` и не затрагивают EF-модель, поэтому snapshot обновлять не нужно.
 
-- Добавить: `dotnet ef migrations add Fake_NNN --project ... --startup-project ...`
-- Применить: `dotnet ef database update` — **не нужно**, Testcontainers сам применяет через `MigrateAsync`
-- Удалить после: удаление файлов `Benchmark_Fake_*.cs` и `Benchmark_Fake_*Designer.cs` напрямую из `Migrations/` — надёжнее чем последовательные `dotnet ef migrations remove` (тот удаляет только последнюю)
+После замера — удаляет файлы `Benchmark_Fake_*.cs` и `Benchmark_Fake_*Designer.cs` из папки миграций. Репозиторий возвращается в исходное состояние.
 
-Фейковые миграции именуются `Benchmark_Fake_001` ... `Benchmark_Fake_NNN`, что позволяет их надёжно идентифицировать и удалить.
+### Именование файлов
+
+Timestamp фейковых миграций начинается с `29990101` чтобы гарантированно идти после всех реальных:
+
+```
+29990101000001_Benchmark_Fake_001.cs
+29990101000001_Benchmark_Fake_001.Designer.cs
+29990101000002_Benchmark_Fake_002.cs
+...
+```
+
+### Два чередующихся типа
+
+Миграции не пустые — пустые выполняются за <1 мс и не показывают разницу.
+
+**Нечётные** — справочная таблица + 300 строк seed-данных (~10–20 мс):
+
+```csharp
+migrationBuilder.Sql(@"
+CREATE TABLE benchmark_ref_001 (
+    id   SERIAL PRIMARY KEY,
+    code VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+INSERT INTO benchmark_ref_001 (code, name)
+SELECT
+    'CODE_' || gs,
+    'Reference value number ' || gs
+FROM generate_series(1, 300) gs;
+");
+```
+
+**Чётные** — ADD COLUMN + UPDATE + SET NOT NULL (~5–15 мс):
+
+```csharp
+migrationBuilder.Sql(@"
+ALTER TABLE ""Products"" ADD COLUMN benchmark_col_002 TEXT NULL;
+UPDATE ""Products"" SET benchmark_col_002 = 'default_value';
+ALTER TABLE ""Products"" ALTER COLUMN benchmark_col_002 SET NOT NULL;
+ALTER TABLE ""Products"" ALTER COLUMN benchmark_col_002 SET DEFAULT 'default_value';
+");
+```
+
+### Правила генерации C# кода
+
+Соответствуют существующим миграциям проекта:
+
+- SQL — в вербатим-строках `@"..."`
+- Идентификаторы PostgreSQL в двойных кавычках экранируются как `""` внутри `@"..."` — например `""Products""`, `""Id""`
+- Имена справочных таблиц и колонок фейковых миграций — в нижнем регистре без кавычек (не являются EF-сущностями)
+- `Down()` — `DROP TABLE IF EXISTS` / `DROP COLUMN IF EXISTS`
+
+### Применение
+
+`dotnet ef database update` не нужен — каждый подход сам применяет миграции:
+- Testcontainers: `MigrateAsync()` в `TestDbFactory.CreateAsync()` на каждый тест
+- Respawn: `MigrateAsync()` в `RespawnFixture.InitializeAsync()` один раз на класс
+- IntegreSQL: `MigrateAsync()` в `IntegresSqlContainerManager` один раз на процесс
 
 ---
 
