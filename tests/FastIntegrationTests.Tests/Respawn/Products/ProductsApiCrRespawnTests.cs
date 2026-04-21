@@ -1,18 +1,15 @@
 namespace FastIntegrationTests.Tests.Respawn.Products;
 
 /// <summary>
-/// Интеграционные тесты HTTP-уровня для ProductsController.
-/// Каждый тест получает изолированный клон БД через Respawn (~5 мс) и отдельный TestServer.
+/// Тесты HTTP-уровня: GetAll, GetById, Create для ProductsController.
+/// Каждый тест сбрасывает данные через Respawn (~1 мс), схема и TestServer сохраняются.
 /// </summary>
-public class ProductsApiRespawnTests : RespawnApiTestBase
+public class ProductsApiCrRespawnTests : RespawnApiTestBase
 {
-    /// <summary>Создаёт новый экземпляр <see cref="ProductsApiRespawnTests"/>.</summary>
+    /// <summary>Создаёт новый экземпляр <see cref="ProductsApiCrRespawnTests"/>.</summary>
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
-    public ProductsApiRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
+    public ProductsApiCrRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    /// <summary>
-    /// GET /api/products при пустой базе возвращает 200 и пустой массив.
-    /// </summary>
     [Theory]
     [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
     public async Task GetAll_WhenNoProducts_Returns200WithEmptyArray(int _)
@@ -24,9 +21,6 @@ public class ProductsApiRespawnTests : RespawnApiTestBase
         Assert.Empty(products!);
     }
 
-    /// <summary>
-    /// GET /api/products при наличии товаров возвращает 200 и список.
-    /// </summary>
     [Theory]
     [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
     public async Task GetAll_WhenProductsExist_Returns200WithProducts(int _)
@@ -41,9 +35,6 @@ public class ProductsApiRespawnTests : RespawnApiTestBase
         Assert.Equal(2, products!.Count);
     }
 
-    /// <summary>
-    /// GET /api/products/{id} для существующего товара возвращает 200 и данные товара.
-    /// </summary>
     [Theory]
     [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
     public async Task GetById_WhenProductExists_Returns200WithProduct(int _)
@@ -58,9 +49,6 @@ public class ProductsApiRespawnTests : RespawnApiTestBase
         Assert.Equal("Ноутбук", product.Name);
     }
 
-    /// <summary>
-    /// GET /api/products/{id} для несуществующего товара возвращает 404.
-    /// </summary>
     [Theory]
     [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
     public async Task GetById_WhenProductNotFound_Returns404(int _)
@@ -70,9 +58,6 @@ public class ProductsApiRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    /// <summary>
-    /// POST /api/products с валидными данными возвращает 201, заголовок Location и созданный товар.
-    /// </summary>
     [Theory]
     [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
     public async Task Create_ValidRequest_Returns201WithLocationHeaderAndId(int _)
@@ -88,68 +73,6 @@ public class ProductsApiRespawnTests : RespawnApiTestBase
         Assert.Equal("Монитор", product.Name);
     }
 
-    /// <summary>
-    /// PUT /api/products/{id} для существующего товара возвращает 200 с обновлёнными полями.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenProductExists_Returns200WithUpdatedFields(int _)
-    {
-        var created = await CreateProductAsync("Старое", 100m);
-        var updateRequest = new UpdateProductRequest { Name = "Новое", Description = "Обновлено", Price = 200m };
-
-        var response = await Client.PutAsJsonAsync($"/api/products/{created.Id}", updateRequest);
-        var updated = await response.Content.ReadFromJsonAsync<ProductDto>();
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("Новое", updated!.Name);
-        Assert.Equal("Обновлено", updated.Description);
-        Assert.Equal(200m, updated.Price);
-    }
-
-    /// <summary>
-    /// PUT /api/products/{id} для несуществующего товара возвращает 404.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenProductNotFound_Returns404(int _)
-    {
-        var request = new UpdateProductRequest { Name = "Название", Description = string.Empty, Price = 100m };
-
-        var response = await Client.PutAsJsonAsync("/api/products/999", request);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    /// <summary>
-    /// DELETE /api/products/{id} для существующего товара возвращает 204.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenProductExists_Returns204(int _)
-    {
-        var created = await CreateProductAsync("Удаляемый", 100m);
-
-        var response = await Client.DeleteAsync($"/api/products/{created.Id}");
-
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-    }
-
-    /// <summary>
-    /// DELETE /api/products/{id} для несуществующего товара возвращает 404.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenProductNotFound_Returns404(int _)
-    {
-        var response = await Client.DeleteAsync("/api/products/999");
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    /// <summary>
-    /// POST затем GET возвращают идентичные данные товара.
-    /// </summary>
     [Theory]
     [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
     public async Task CreateThenGetById_DataMatchesExactly(int _)

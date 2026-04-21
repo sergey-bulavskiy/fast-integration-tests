@@ -1,99 +1,11 @@
-namespace FastIntegrationTests.Tests.Testcontainers.Orders;
+namespace FastIntegrationTests.Tests.IntegreSQL.Orders;
 
 /// <summary>
-/// Интеграционные тесты HTTP-уровня для OrdersController через Testcontainers.
-/// Используются как baseline для сравнения скорости с IntegreSQL-вариантом (<see cref="OrdersApiTests"/>).
-/// Проверяют HTTP-статусы, тела ответов и полный жизненный цикл заказа.
+/// Тесты HTTP-уровня: статусные переходы и сквозные сценарии для OrdersController.
+/// Каждый тест получает изолированный клон БД через IntegreSQL (~5 мс) и отдельный TestServer.
 /// </summary>
-public class OrdersApiContainerTests : ContainerApiTestBase
+public class OrdersApiUdTests : ComponentTestBase
 {
-    /// <summary>
-    /// Создаёт новый экземпляр <see cref="OrdersApiContainerTests"/>.
-    /// </summary>
-    /// <param name="fixture">Запущенный контейнер с СУБД.</param>
-    public OrdersApiContainerTests(ContainerFixture fixture) : base(fixture) { }
-
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenNoOrders_Returns200WithEmptyArray(int _)
-    {
-        var response = await Client.GetAsync("/api/orders");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var orders = await response.Content.ReadFromJsonAsync<List<OrderDto>>();
-        Assert.Empty(orders!);
-    }
-
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenOrdersExist_Returns200WithOrders(int _)
-    {
-        await CreateOrderWithProductAsync();
-        await CreateOrderWithProductAsync();
-
-        var response = await Client.GetAsync("/api/orders");
-        var orders = await response.Content.ReadFromJsonAsync<List<OrderDto>>();
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(2, orders!.Count);
-    }
-
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenOrderExists_Returns200WithItems(int _)
-    {
-        var created = await CreateOrderWithProductAsync();
-
-        var response = await Client.GetAsync($"/api/orders/{created.Id}");
-        var order = await response.Content.ReadFromJsonAsync<OrderDto>();
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(created.Id, order!.Id);
-        Assert.Single(order.Items);
-    }
-
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenOrderNotFound_Returns404(int _)
-    {
-        var response = await Client.GetAsync("/api/orders/999");
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_ValidRequest_Returns201WithCalculatedTotalAmount(int _)
-    {
-        var product = await CreateProductAsync("Процессор", 15_000m);
-        var request = new CreateOrderRequest
-        {
-            Items = new List<OrderItemRequest> { new() { ProductId = product.Id, Quantity = 2 } }
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/orders", request);
-        var order = await response.Content.ReadFromJsonAsync<OrderDto>();
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.NotNull(response.Headers.Location);
-        Assert.True(order!.Id > 0);
-        Assert.Equal(30_000m, order.TotalAmount); // 2 * 15000
-    }
-
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_WhenProductNotFound_Returns404(int _)
-    {
-        var request = new CreateOrderRequest
-        {
-            Items = new List<OrderItemRequest> { new() { ProductId = 999, Quantity = 1 } }
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/orders", request);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
     [Theory]
     [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
     public async Task Confirm_WhenOrderIsNew_Returns200WithConfirmedStatus(int _)
