@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integration Test Benchmark</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 1100px; margin: 0 auto; padding: 24px;
+      background: #f9fafb; color: #111;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    .meta { color: #6b7280; font-size: 0.82rem; margin-bottom: 32px; }
+    .card {
+      background: #fff; border-radius: 8px; padding: 24px;
+      margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+    h2 { font-size: 1.05rem; margin: 0 0 4px; }
+    .subtitle { color: #6b7280; font-size: 0.8rem; margin: 0 0 20px; }
+    canvas { max-height: 350px; }
+  </style>
+</head>
+<body>
+  <script>const BENCHMARK_DATA = /*INJECT_JSON*/;</script>
+
+  <h1>Integration Test Benchmark</h1>
+  <p class="meta" id="meta"></p>
+
+  <div class="card">
+    <h2>Сценарий 1 — Влияние числа миграций</h2>
+    <p class="subtitle">TEST_REPEAT=10, потоков=4 &nbsp;|&nbsp; Ось X: количество миграций в проекте</p>
+    <canvas id="chart-migrations"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>Сценарий 2 — Масштаб числа тестов</h2>
+    <p class="subtitle">17 миграций, потоков=4 &nbsp;|&nbsp; Ось X: TEST_REPEAT (число повторов каждого теста)</p>
+    <canvas id="chart-scale"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>Сценарий 3 — Параллелизм</h2>
+    <p class="subtitle">17 миграций, TEST_REPEAT=20 &nbsp;|&nbsp; Ось X: MaxParallelThreads</p>
+    <canvas id="chart-parallelism"></canvas>
+  </div>
+
+  <script>
+    const data = BENCHMARK_DATA;
+
+    document.getElementById('meta').textContent =
+      'Сгенерировано: ' + new Date(data.generatedAt).toLocaleString('ru') +
+      '  |  Машина: ' + data.machineName;
+
+    const COLORS = {
+      IntegreSQL:     { border: 'rgb(59,130,246)',  bg: 'rgba(59,130,246,0.12)'  },
+      Respawn:        { border: 'rgb(34,197,94)',   bg: 'rgba(34,197,94,0.12)'   },
+      Testcontainers: { border: 'rgb(239,68,68)',   bg: 'rgba(239,68,68,0.12)'   },
+    };
+
+    const APPROACHES = ['IntegreSQL', 'Respawn', 'Testcontainers'];
+
+    function buildChart(canvasId, scenarioName, xField, xLabel) {
+      const rows    = data.results.filter(r => r.scenario.scenarioName === scenarioName);
+      const xValues = [...new Set(rows.map(r => r.scenario[xField]))].sort((a, b) => a - b);
+
+      const datasets = APPROACHES.map(approach => ({
+        label:           approach,
+        data:            xValues.map(x => {
+          const row = rows.find(r => r.scenario.approach === approach && r.scenario[xField] === x);
+          return row ? +row.elapsedSeconds.toFixed(2) : null;
+        }),
+        borderColor:     COLORS[approach].border,
+        backgroundColor: COLORS[approach].bg,
+        borderWidth:     2,
+        pointRadius:     5,
+        tension:         0.15,
+        fill:            false,
+      }));
+
+      new Chart(document.getElementById(canvasId), {
+        type: 'line',
+        data: { labels: xValues, datasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' с' }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: xLabel } },
+            y: { title: { display: true, text: 'Время (секунды)' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    buildChart('chart-migrations', 'migrations', 'migrationCount',     'Количество миграций');
+    buildChart('chart-scale',      'scale',      'testRepeat',          'TEST_REPEAT');
+    buildChart('chart-parallelism','parallelism', 'maxParallelThreads', 'MaxParallelThreads');
+  </script>
+</body>
+</html>
