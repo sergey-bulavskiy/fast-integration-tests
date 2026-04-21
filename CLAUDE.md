@@ -50,9 +50,6 @@ $env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "Full
 $env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
 $env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
 
-# Только накладные расходы инфраструктуры (пустые тесты, измеряют InitializeAsync)
-TEST_REPEAT=100 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Overhead"
-
 # Переопределить количество потоков прямо из CLI
 TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL" -- xUnit.MaxParallelThreads=8
 
@@ -65,10 +62,56 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Orders
 
 ### Как работают тесты
 
-- **Требование:** Docker должен быть запущен. Testcontainers автоматически поднимает контейнеры PostgreSQL и IntegreSQL.
-- **Изоляция:** каждый тест получает клон шаблонной БД через IntegreSQL (~5 мс), применяет бизнес-операции, возвращает базу после завершения.
-- **Параллелизм:** тест-классы выполняются параллельно (`maxParallelThreads = 4` в `xunit.runner.json`).
-- **Инфраструктура скрыта:** тесты работают только через `IProductService` / `IOrderService` (сервисный уровень) или `HttpClient` (HTTP-уровень). Создание и удаление базы данных происходит в базовых классах `AppServiceTestBase` / `ComponentTestBase` (IntegreSQL) и `ContainerServiceTestBase` / `ContainerApiTestBase` (Testcontainers).
+**Требование:** Docker должен быть запущен. Контейнеры PostgreSQL (и IntegreSQL для соответствующего подхода) поднимаются автоматически через Testcontainers.
+
+**Инфраструктура скрыта:** тесты работают только через `IProductService` / `IOrderService` (сервисный уровень) или `HttpClient` (HTTP-уровень). Вся работа с БД — в базовых классах.
+
+#### Три подхода к изоляции
+
+**IntegreSQL** (`AppServiceTestBase` / `ComponentTestBase`):
+- Один пара контейнеров (PostgreSQL + IntegreSQL) на весь процесс — `IntegresSqlContainerManager` (static Lazy).
+- Миграции применяются **один раз** как шаблонная БД `"shop-default"`.
+- Каждый тест получает **клон шаблона** (~5 мс) и после завершения клон удаляется.
+- Тесты полностью изолированы — параллелизм внутри класса возможен.
+
+**Respawn** (`RespawnServiceTestBase` / `RespawnApiTestBase`):
+- Один контейнер PostgreSQL **на класс** (через `IClassFixture<RespawnFixture>`).
+- Миграции применяются **один раз на класс** в `RespawnFixture.InitializeAsync()`.
+- Между тестами — `TRUNCATE CASCADE` через Respawn (~1 мс), схема сохраняется.
+- TestServer и HttpClient создаются **один раз на класс** и переиспользуются.
+- Тесты внутри одного класса выполняются **последовательно** (общая БД).
+
+**Testcontainers** (`ContainerServiceTestBase` / `ContainerApiTestBase`):
+- Один контейнер PostgreSQL **на класс** (через `IClassFixture<ContainerFixture>`).
+- Миграции применяются **один раз на класс**.
+- Между тестами — пересоздание БД через `EnsureDeleted` + `MigrateAsync` (~200 мс).
+- TestServer и HttpClient создаются **на каждый тест**.
+
+#### Сравнение по ключевым параметрам
+
+| | IntegreSQL | Respawn | Testcontainers |
+|---|---|---|---|
+| Контейнер | 1 на процесс | 1 на класс | 1 на класс |
+| Миграции | 1 раз (весь процесс) | 1 раз (класс) | 1 раз (класс) |
+| Сброс данных | удаление клона | TRUNCATE ~1 мс | EnsureDeleted ~200 мс |
+| TestServer (API) | новый на каждый тест | 1 на класс | новый на каждый тест |
+| Параллелизм внутри класса | да | нет | да |
+
+### PowerShell скрипты для запуска тестов
+
+В корне репозитория есть готовые скрипты с параметрами `-Repeat` и `-Threads`:
+
+```powershell
+# Бизнес-тесты каждого подхода (по умолчанию: 5 повторов, 4 потока)
+.\run-integresql.ps1
+.\run-testcontainers.ps1
+.\run-respawn.ps1
+
+# Переопределить параметры
+.\run-integresql.ps1 -Repeat 19 -Threads 8
+```
+
+Каждый скрипт выводит итоговое время выполнения в формате `мм:сс.ммм`.
 
 ## Архитектура
 
@@ -77,7 +120,7 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Orders
 - **Application** — доменные сущности (`Entities/`), перечисления (`Enums/`), DTO (`DTOs/`), интерфейсы репозиториев и сервисов (`Interfaces/`), сервисы бизнес-логики (`Services/`), доменные исключения (`Exceptions/`). Не зависит от EF Core и конкретной СУБД.
 - **Infrastructure** — реализация репозиториев через EF Core (`Repositories/`), `ShopDbContext` с конфигурациями (`Data/`), extension-методы регистрации DI (`Extensions/ServiceCollectionExtensions.cs`).
 - **WebApi** — контроллеры (`Controllers/`), `Program.cs` с DI-конфигурацией, глобальная обработка ошибок (`Middleware/GlobalExceptionHandler.cs`).
-- **Tests** (`tests/FastIntegrationTests.Tests/`) — интеграционные тесты. Инфраструктура тестов в `Infrastructure/` (фикстуры, фабрики, базовые классы). Тест-классы в `Products/` и `Orders/`.
+- **Tests** (`tests/FastIntegrationTests.Tests/`) — интеграционные тесты. Инфраструктура в `Infrastructure/` (фикстуры, фабрики, базовые классы для трёх подходов). Тест-классы сгруппированы по подходу: `IntegreSQL/`, `Respawn/`, `Testcontainers/`, каждый содержит `Products/` и `Orders/`.
 
 ## Локальная разработка
 
@@ -133,8 +176,5 @@ done
 - Полный жизненный цикл заказа (New → Confirmed → Shipped → Completed) — 4 write-операции
 - Создание 20+ товаров, заказа с множеством позиций, агрегация суммы
 - Каскадные проверки (FK, rollback при нарушении ограничений)
-
-**Чисто накладные расходы (уже есть):**
-- `Overhead`-тесты с пустым телом — изолируют стоимость `InitializeAsync/DisposeAsync`
 
 Соотношение ~30% лёгких / 50% средних / 20% тяжёлых даёт наиболее репрезентативную картину для сравнения подходов.
