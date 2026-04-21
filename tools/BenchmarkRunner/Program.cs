@@ -44,7 +44,7 @@ foreach (var migrationCount in new[] { 16, 66, 116 })
 
         foreach (var approach in approaches)
             results.Add(runner.Run(
-                new BenchmarkScenario(approach, "migrations", migrationCount, TestRepeat: 10, MaxParallelThreads: 4)));
+                new BenchmarkScenario(approach, "migrations", migrationCount, TestRepeat: 38, MaxParallelThreads: 8)));
     }
     finally
     {
