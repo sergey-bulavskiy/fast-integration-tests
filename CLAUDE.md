@@ -179,7 +179,7 @@ tools/BenchmarkRunner/
 - **Application** — доменные сущности (`Entities/`), перечисления (`Enums/`), DTO (`DTOs/`), интерфейсы репозиториев и сервисов (`Interfaces/`), сервисы бизнес-логики (`Services/`), доменные исключения (`Exceptions/`). Не зависит от EF Core и конкретной СУБД.
 - **Infrastructure** — реализация репозиториев через EF Core (`Repositories/`), `ShopDbContext` с конфигурациями (`Data/`), extension-методы регистрации DI (`Extensions/ServiceCollectionExtensions.cs`).
 - **WebApi** — контроллеры (`Controllers/`), `Program.cs` с DI-конфигурацией, глобальная обработка ошибок (`Middleware/GlobalExceptionHandler.cs`).
-- **Tests** (`tests/FastIntegrationTests.Tests/`) — интеграционные тесты. Инфраструктура в `Infrastructure/` (фикстуры, фабрики, базовые классы для трёх подходов). Тест-классы сгруппированы по подходу: `IntegreSQL/`, `Respawn/`, `Testcontainers/`, каждый содержит `Products/` и `Orders/`.
+- **Tests** (`tests/FastIntegrationTests.Tests/`) — интеграционные тесты. Инфраструктура в `Infrastructure/` (фикстуры, фабрики, базовые классы для трёх подходов). Тест-классы сгруппированы по подходу: `IntegreSQL/`, `Respawn/`, `Testcontainers/`, каждый содержит `Products/` и `Orders/`. Внутри каждой сущности тесты разбиты на `*CrTests` (GetAll, GetById, Create) и `*UdTests` (Update, Delete, статусные переходы) — по 8 классов на подход.
 
 ## Локальная разработка
 
