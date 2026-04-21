@@ -2,7 +2,7 @@
 namespace BenchmarkRunner.Migrations;
 
 /// <summary>Добавляет и удаляет фейковые .cs файлы миграций для бенчмарка.</summary>
-class MigrationManager
+public class MigrationManager
 {
     private readonly string _migrationsPath;
     private const string FakePrefix = "Benchmark_Fake_";
@@ -17,6 +17,9 @@ class MigrationManager
     /// <summary>Создаёт указанное количество фейковых миграций в папке Infrastructure.</summary>
     public void AddFakeMigrations(int count)
     {
+        if (!Directory.Exists(_migrationsPath))
+            throw new DirectoryNotFoundException($"Migrations directory not found: {_migrationsPath}");
+
         Console.WriteLine($"\n[MIGRATIONS] Adding {count} fake migrations...");
         for (var i = 1; i <= count; i++)
         {
