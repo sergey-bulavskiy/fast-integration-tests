@@ -1,15 +1,21 @@
 # FastIntegrationTests
 
-Учебный проект: REST API магазина на .NET 8 с полным набором интеграционных тестов на реальной базе данных.
+Учебный проект: REST API магазина на .NET 8 с полным набором интеграционных тестов на реальной PostgreSQL.
 
-Демонстрирует паттерн **database-per-test** с Testcontainers: каждый тест получает изолированную базу данных, тесты выполняются параллельно, инфраструктура скрыта от тест-кода.
+Демонстрирует и сравнивает три подхода к изоляции тестов в паттерне **database-per-test**:
+
+| Подход | Изоляция | Скорость сброса |
+|--------|----------|-----------------|
+| **IntegreSQL** | клон шаблонной БД на каждый тест | ~5 мс |
+| **Respawn** | TRUNCATE CASCADE между тестами | ~1 мс |
+| **Testcontainers** | EnsureDeleted + MigrateAsync на каждый тест | ~200 мс |
 
 ---
 
 ## Требования
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (для локальной разработки и запуска тестов)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
 ---
 
@@ -25,16 +31,15 @@ docker-compose up postgres -d
 # 3. Создать appsettings.Development.json из шаблона
 cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example \
    src/FastIntegrationTests.WebApi/appsettings.Development.json
+# Заполнить строку подключения:
+# "PostgreSQL": "Host=localhost;Database=shop;Username=postgres;Password=postgres"
 
-# 4. Заполнить строку подключения в appsettings.Development.json:
-#    "PostgreSQL": "Host=localhost;Database=shop;Username=postgres;Password=postgres"
-
-# 5. Применить миграции
+# 4. Применить миграции
 dotnet ef database update \
   --project src/FastIntegrationTests.Infrastructure \
   --startup-project src/FastIntegrationTests.WebApi
 
-# 6. Запустить сервис
+# 5. Запустить сервис
 dotnet run --project src/FastIntegrationTests.WebApi
 ```
 
@@ -77,37 +82,67 @@ New → Confirmed → Shipped → Completed
 
 ## Запуск тестов
 
-Docker должен быть запущен. Testcontainers автоматически поднимает контейнер с базой данных — вручную ничего поднимать не нужно.
+Docker должен быть запущен. Контейнеры поднимаются автоматически через Testcontainers.
 
 ```bash
-# Запустить все 57 тестов
+# Все 159 тестов (три подхода вместе)
 dotnet test tests/FastIntegrationTests.Tests
 
-# С подробным выводом (видны имена тестов и SQL-запросы)
-dotnet test tests/FastIntegrationTests.Tests --verbosity normal
+# Один подход
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
 
-# Запустить тесты отдельного класса
+# Отдельный тест-класс
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductsApiTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrderServiceTests"
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiTests"
 ```
 
-### Что тестируется
+### PowerShell скрипты (с замером времени)
 
-| Класс | Уровень | Тестов | Инфраструктура |
-|-------|---------|--------|----------------|
-| `ProductServiceTests` | Сервисный | 11 | IntegreSQL |
-| `ProductsApiTests` | HTTP | 10 | IntegreSQL |
-| `OrderServiceTests` | Сервисный | 16 | IntegreSQL |
-| `OrdersApiTests` | HTTP | 16 | IntegreSQL |
+```powershell
+# По умолчанию: 5 повторов, 4 потока
+.\run-integresql.ps1
+.\run-respawn.ps1
+.\run-testcontainers.ps1
 
-### Как устроена изоляция
+# Переопределить параметры
+.\run-integresql.ps1 -Repeat 20 -Threads 8
+```
 
-- Миграции применяются один раз как шаблонная БД (IntegreSQL).
-- Каждый тест получает клон шаблона (~5 мс) вместо полного поднятия БД.
-- Клон возвращается в пул в `DisposeAsync`.
-- Тест-классы выполняются параллельно (`maxParallelThreads = 4`).
+### Сравнение подходов
+
+| | IntegreSQL | Respawn | Testcontainers |
+|---|---|---|---|
+| Контейнер | 1 на процесс | 1 на класс | 1 на класс |
+| Миграции | 1 раз (весь процесс) | 1 раз на класс | 1 раз на класс |
+| Сброс данных | удаление клона ~5 мс | TRUNCATE ~1 мс | EnsureDeleted ~200 мс |
+| Параллелизм внутри класса | да | нет | да |
+
+---
+
+## Benchmark Runner
+
+Инструмент для автоматического сравнительного бенчмарка трёх подходов. Прогоняет три сценария и генерирует HTML-отчёт с Chart.js графиками.
+
+```bash
+# Запуск (Docker должен быть запущен, займёт 15–30 мин)
+dotnet run --project tools/BenchmarkRunner
+
+# Открыть отчёт
+start benchmark-results/report.html   # Windows
+open benchmark-results/report.html    # macOS
+```
+
+### Сценарии бенчмарка
+
+| Сценарий | Что варьируется |
+|----------|-----------------|
+| 1 — Влияние миграций | 16 / 66 / 116 миграций (TEST_REPEAT=10, потоков=4) |
+| 2 — Масштаб тестов | TEST_REPEAT: 1, 5, 10, 20, 50 (16 миграций, потоков=4) |
+| 3 — Параллелизм | потоков: 1, 2, 4, 8 (16 миграций, TEST_REPEAT=20) |
+
+Фейковые миграции для сценария 1 генерируются и удаляются автоматически.
 
 ---
 
@@ -116,16 +151,24 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Orders
 ```
 src/
 ├── FastIntegrationTests.Application/    # Домен: сущности, DTO, сервисы, исключения
-├── FastIntegrationTests.Infrastructure/ # EF Core: DbContext, репозитории, миграции
+├── FastIntegrationTests.Infrastructure/ # EF Core: DbContext, репозитории, миграции (16 шт.)
 └── FastIntegrationTests.WebApi/         # ASP.NET Core: контроллеры, Program.cs
 
 tests/
 └── FastIntegrationTests.Tests/
-    ├── Infrastructure/
-    │   ├── Fixtures/     # ContainerFixture — Testcontainers lifecycle
-    │   ├── Factories/    # TestDbFactory — создаёт изолированную БД на тест
-    │   ├── Base/         # AppServiceTestBase, ComponentTestBase, ServiceTestBase, ApiTestBase
-    │   └── WebApp/       # TestWebApplicationFactory
-    ├── Products/         # ProductServiceTests, ProductsApiTests
-    └── Orders/           # OrderServiceTests, OrdersApiTests
+    ├── Infrastructure/                  # Фикстуры, базовые классы для трёх подходов
+    ├── IntegreSQL/                      # 53 теста: Products/, Orders/
+    ├── Respawn/                         # 53 теста: Products/, Orders/
+    └── Testcontainers/                  # 53 теста: Products/, Orders/
+
+tools/
+└── BenchmarkRunner/                     # Консольный инструмент бенчмарка
+    ├── Models/                          # BenchmarkScenario, BenchmarkResult, BenchmarkReport
+    ├── Runner/                          # TestRunner — запуск dotnet test через Process
+    ├── Migrations/                      # MigrationManager — генерация фейковых миграций
+    └── Report/                          # ReportGenerator + Chart.js HTML шаблон
+
+benchmark-results/                       # Gitignored, создаётся при запуске бенчмарка
+├── report.html
+└── results.json
 ```
