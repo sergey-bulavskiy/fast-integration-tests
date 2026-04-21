@@ -9,7 +9,7 @@ var runner           = new TestRunner(repoRoot);
 var migrationManager = new MigrationManager(repoRoot);
 var results          = new List<BenchmarkResult>();
 
-const int BaseMigrations = 17;
+const int BaseMigrations = 16;
 var approaches = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
 
 Console.WriteLine("=== Integration Test Benchmark Runner ===");
@@ -25,13 +25,16 @@ runner.Build();
 
 // ─── Сценарий 1: влияние числа миграций ────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 1: Migration Count Impact ═══");
-foreach (var migrationCount in new[] { 17, 67, 117 })
+foreach (var migrationCount in new[] { 16, 66, 116 })
 {
     var fakesToAdd = migrationCount - BaseMigrations;
-    if (fakesToAdd > 0) migrationManager.AddFakeMigrations(fakesToAdd);
     try
     {
-        if (fakesToAdd > 0) runner.Build();
+        if (fakesToAdd > 0)
+        {
+            migrationManager.AddFakeMigrations(fakesToAdd);
+            runner.Build();
+        }
 
         foreach (var approach in approaches)
             results.Add(runner.Run(
