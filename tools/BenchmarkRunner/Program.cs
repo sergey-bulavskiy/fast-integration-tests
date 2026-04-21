@@ -23,6 +23,12 @@ Console.ReadLine();
 // Первичная сборка
 runner.Build();
 
+// ─── Warmup: разогреть Docker + PostgreSQL до начала измерений ─────────────
+// Результат не сохраняется — нужен чтобы Docker-образы, сетевые соединения
+// и PageCache ОС были прогреты одинаково для всех точек Сценария 1.
+Console.WriteLine("\n═══ Warmup (не входит в отчёт) ═══");
+runner.Run(new BenchmarkScenario("IntegreSQL", "warmup", BaseMigrations, TestRepeat: 1, MaxParallelThreads: 4));
+
 // ─── Сценарий 1: влияние числа миграций ────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 1: Migration Count Impact ═══");
 foreach (var migrationCount in new[] { 16, 66, 116 })
