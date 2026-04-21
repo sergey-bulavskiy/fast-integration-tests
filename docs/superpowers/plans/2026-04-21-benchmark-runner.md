@@ -109,7 +109,7 @@ git commit -m "feat: добавить проект BenchmarkRunner (scaffold)"
 // tools/BenchmarkRunner/Models/BenchmarkScenario.cs
 namespace BenchmarkRunner.Models;
 
-record BenchmarkScenario(
+public record BenchmarkScenario(
     string Approach,           // "IntegreSQL" | "Respawn" | "Testcontainers"
     string ScenarioName,       // "migrations" | "scale" | "parallelism"
     int    MigrationCount,
@@ -124,7 +124,7 @@ record BenchmarkScenario(
 // tools/BenchmarkRunner/Models/BenchmarkResult.cs
 namespace BenchmarkRunner.Models;
 
-record BenchmarkResult(
+public record BenchmarkResult(
     BenchmarkScenario Scenario,
     double            ElapsedSeconds,
     bool              Success
@@ -137,10 +137,10 @@ record BenchmarkResult(
 // tools/BenchmarkRunner/Models/BenchmarkReport.cs
 namespace BenchmarkRunner.Models;
 
-record BenchmarkReport(
-    DateTime            GeneratedAt,
-    string              MachineName,
-    List<BenchmarkResult> Results
+public record BenchmarkReport(
+    DateTime                      GeneratedAt,
+    string                        MachineName,
+    IReadOnlyList<BenchmarkResult> Results
 );
 ```
 
@@ -247,7 +247,7 @@ var runner   = new TestRunner(repoRoot);
 
 runner.Build();
 
-var result = runner.Run(new BenchmarkScenario("IntegreSQL", "smoke", 17, 1, 4));
+var result = runner.Run(new BenchmarkScenario("IntegreSQL", "smoke", 16, 1, 4));
 Console.WriteLine($"\nSmoke test: {result.ElapsedSeconds:F2}s | success={result.Success}");
 
 static string FindRepoRoot()
@@ -308,6 +308,10 @@ class MigrationManager
 
     public void AddFakeMigrations(int count)
     {
+        if (!Directory.Exists(_migrationsPath))
+            throw new DirectoryNotFoundException(
+                $"Migrations directory not found: {_migrationsPath}");
+
         Console.WriteLine($"\n[MIGRATIONS] Adding {count} fake migrations...");
         for (var i = 1; i <= count; i++)
         {
@@ -558,13 +562,13 @@ class ReportGenerator
 
   <div class="card">
     <h2>Сценарий 2 — Масштаб числа тестов</h2>
-    <p class="subtitle">17 миграций, потоков=4 &nbsp;|&nbsp; Ось X: TEST_REPEAT (число повторов каждого теста)</p>
+    <p class="subtitle">16 миграций, потоков=4 &nbsp;|&nbsp; Ось X: TEST_REPEAT (число повторов каждого теста)</p>
     <canvas id="chart-scale"></canvas>
   </div>
 
   <div class="card">
     <h2>Сценарий 3 — Параллелизм</h2>
-    <p class="subtitle">17 миграций, TEST_REPEAT=20 &nbsp;|&nbsp; Ось X: MaxParallelThreads</p>
+    <p class="subtitle">16 миграций, TEST_REPEAT=20 &nbsp;|&nbsp; Ось X: MaxParallelThreads</p>
     <canvas id="chart-parallelism"></canvas>
   </div>
 
@@ -647,27 +651,27 @@ var fakeReport = new BenchmarkReport(
     Environment.MachineName,
     new List<BenchmarkResult>
     {
-        new(new BenchmarkScenario("IntegreSQL",     "migrations", 17, 10, 4), 12.3, true),
-        new(new BenchmarkScenario("Respawn",        "migrations", 17, 10, 4),  9.1, true),
-        new(new BenchmarkScenario("Testcontainers", "migrations", 17, 10, 4), 45.6, true),
-        new(new BenchmarkScenario("IntegreSQL",     "migrations", 67, 10, 4), 13.1, true),
-        new(new BenchmarkScenario("Respawn",        "migrations", 67, 10, 4), 11.2, true),
-        new(new BenchmarkScenario("Testcontainers", "migrations", 67, 10, 4),145.0, true),
-        new(new BenchmarkScenario("IntegreSQL",     "migrations",117, 10, 4), 13.5, true),
-        new(new BenchmarkScenario("Respawn",        "migrations",117, 10, 4), 13.8, true),
-        new(new BenchmarkScenario("Testcontainers", "migrations",117, 10, 4),245.0, true),
-        new(new BenchmarkScenario("IntegreSQL",     "scale",      17,  1, 4),  2.1, true),
-        new(new BenchmarkScenario("Respawn",        "scale",      17,  1, 4),  1.8, true),
-        new(new BenchmarkScenario("Testcontainers", "scale",      17,  1, 4),  4.5, true),
-        new(new BenchmarkScenario("IntegreSQL",     "scale",      17, 20, 4), 18.0, true),
-        new(new BenchmarkScenario("Respawn",        "scale",      17, 20, 4), 15.0, true),
-        new(new BenchmarkScenario("Testcontainers", "scale",      17, 20, 4), 88.0, true),
-        new(new BenchmarkScenario("IntegreSQL",     "parallelism",17, 20, 1), 55.0, true),
-        new(new BenchmarkScenario("Respawn",        "parallelism",17, 20, 1), 60.0, true),
-        new(new BenchmarkScenario("Testcontainers", "parallelism",17, 20, 1),180.0, true),
-        new(new BenchmarkScenario("IntegreSQL",     "parallelism",17, 20, 8), 12.0, true),
-        new(new BenchmarkScenario("Respawn",        "parallelism",17, 20, 8), 55.0, true),
-        new(new BenchmarkScenario("Testcontainers", "parallelism",17, 20, 8), 80.0, true),
+        new(new BenchmarkScenario("IntegreSQL",     "migrations", 16, 10, 4), 12.3, true),
+        new(new BenchmarkScenario("Respawn",        "migrations", 16, 10, 4),  9.1, true),
+        new(new BenchmarkScenario("Testcontainers", "migrations", 16, 10, 4), 45.6, true),
+        new(new BenchmarkScenario("IntegreSQL",     "migrations", 66, 10, 4), 13.1, true),
+        new(new BenchmarkScenario("Respawn",        "migrations", 66, 10, 4), 11.2, true),
+        new(new BenchmarkScenario("Testcontainers", "migrations", 66, 10, 4),145.0, true),
+        new(new BenchmarkScenario("IntegreSQL",     "migrations",116, 10, 4), 13.5, true),
+        new(new BenchmarkScenario("Respawn",        "migrations",116, 10, 4), 13.8, true),
+        new(new BenchmarkScenario("Testcontainers", "migrations",116, 10, 4),245.0, true),
+        new(new BenchmarkScenario("IntegreSQL",     "scale",      16,  1, 4),  2.1, true),
+        new(new BenchmarkScenario("Respawn",        "scale",      16,  1, 4),  1.8, true),
+        new(new BenchmarkScenario("Testcontainers", "scale",      16,  1, 4),  4.5, true),
+        new(new BenchmarkScenario("IntegreSQL",     "scale",      16, 20, 4), 18.0, true),
+        new(new BenchmarkScenario("Respawn",        "scale",      16, 20, 4), 15.0, true),
+        new(new BenchmarkScenario("Testcontainers", "scale",      16, 20, 4), 88.0, true),
+        new(new BenchmarkScenario("IntegreSQL",     "parallelism",16, 20, 1), 55.0, true),
+        new(new BenchmarkScenario("Respawn",        "parallelism",16, 20, 1), 60.0, true),
+        new(new BenchmarkScenario("Testcontainers", "parallelism",16, 20, 1),180.0, true),
+        new(new BenchmarkScenario("IntegreSQL",     "parallelism",16, 20, 8), 12.0, true),
+        new(new BenchmarkScenario("Respawn",        "parallelism",16, 20, 8), 55.0, true),
+        new(new BenchmarkScenario("Testcontainers", "parallelism",16, 20, 8), 80.0, true),
     });
 
 reportGen.Generate(fakeReport);
@@ -725,7 +729,7 @@ var runner           = new TestRunner(repoRoot);
 var migrationManager = new MigrationManager(repoRoot);
 var results          = new List<BenchmarkResult>();
 
-const int BaseMigrations = 17;
+const int BaseMigrations = 16;
 var approaches = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
 
 Console.WriteLine("=== Integration Test Benchmark Runner ===");
@@ -741,23 +745,31 @@ runner.Build();
 
 // ─── Сценарий 1: влияние числа миграций ────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 1: Migration Count Impact ═══");
-foreach (var migrationCount in new[] { 17, 67, 117 })
+foreach (var migrationCount in new[] { 16, 66, 116 })
 {
     var fakesToAdd = migrationCount - BaseMigrations;
     if (fakesToAdd > 0)
     {
-        migrationManager.AddFakeMigrations(fakesToAdd);
-        runner.Build();
+        try
+        {
+            migrationManager.AddFakeMigrations(fakesToAdd);
+            runner.Build();
+
+            foreach (var approach in approaches)
+                results.Add(runner.Run(
+                    new BenchmarkScenario(approach, "migrations", migrationCount, testRepeat: 10, maxParallelThreads: 4)));
+        }
+        finally
+        {
+            migrationManager.RemoveFakeMigrations();
+            runner.Build(); // вернуть чистое состояние
+        }
     }
-
-    foreach (var approach in approaches)
-        results.Add(runner.Run(
-            new BenchmarkScenario(approach, "migrations", migrationCount, testRepeat: 10, maxParallelThreads: 4)));
-
-    if (fakesToAdd > 0)
+    else
     {
-        migrationManager.RemoveFakeMigrations();
-        runner.Build(); // вернуть чистое состояние
+        foreach (var approach in approaches)
+            results.Add(runner.Run(
+                new BenchmarkScenario(approach, "migrations", migrationCount, testRepeat: 10, maxParallelThreads: 4)));
     }
 }
 
