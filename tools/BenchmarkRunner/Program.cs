@@ -1,14 +1,25 @@
 // tools/BenchmarkRunner/Program.cs
+using BenchmarkRunner.Migrations;
 using BenchmarkRunner.Models;
 using BenchmarkRunner.Runner;
 
-var repoRoot = FindRepoRoot();
-var runner   = new TestRunner(repoRoot);
+var repoRoot         = FindRepoRoot();
+var runner           = new TestRunner(repoRoot);
+var migrationManager = new MigrationManager(repoRoot);
 
+// Добавить 3 фейковые миграции, убедиться что файлы создались, затем удалить
+migrationManager.AddFakeMigrations(3);
+
+var migrationsDir = Path.Combine(repoRoot, "src", "FastIntegrationTests.Infrastructure", "Migrations");
+var fakeFiles     = Directory.GetFiles(migrationsDir, "*Benchmark_Fake*");
+Console.WriteLine($"\nFake files created: {fakeFiles.Length}");
+foreach (var f in fakeFiles) Console.WriteLine($"  {Path.GetFileName(f)}");
+
+// Проверяем что сгенерированный C# синтаксически корректен
 runner.Build();
 
-var result = runner.Run(new BenchmarkScenario("IntegreSQL", "smoke", 17, 1, 4));
-Console.WriteLine($"\nSmoke test: {result.ElapsedSeconds:F2}s | success={result.Success}");
+migrationManager.RemoveFakeMigrations();
+Console.WriteLine("\nFake migrations removed OK");
 
 static string FindRepoRoot()
 {
