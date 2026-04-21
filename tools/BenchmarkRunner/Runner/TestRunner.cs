@@ -4,10 +4,12 @@ using BenchmarkRunner.Models;
 
 namespace BenchmarkRunner.Runner;
 
+/// <summary>Запускает dotnet test как дочерний процесс и измеряет wall-clock время выполнения.</summary>
 class TestRunner
 {
     private readonly string _repoRoot;
 
+    /// <summary>Инициализирует runner с корневой директорией репозитория.</summary>
     public TestRunner(string repoRoot) => _repoRoot = repoRoot;
 
     /// <summary>Собирает тестовый проект. Вызывается перед первым Run и после изменения миграций.</summary>
@@ -59,6 +61,9 @@ class TestRunner
         using var process = Process.Start(psi)!;
         process.WaitForExit();
         if (process.ExitCode != 0)
+        {
+            Console.WriteLine($"[BUILD] FAIL: exit code {process.ExitCode}");
             throw new Exception($"Process exited with code {process.ExitCode}: {filename} {args}");
+        }
     }
 }
