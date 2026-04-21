@@ -28,20 +28,22 @@ Console.WriteLine("\n═══ Scenario 1: Migration Count Impact ═══");
 foreach (var migrationCount in new[] { 17, 67, 117 })
 {
     var fakesToAdd = migrationCount - BaseMigrations;
-    if (fakesToAdd > 0)
+    if (fakesToAdd > 0) migrationManager.AddFakeMigrations(fakesToAdd);
+    try
     {
-        migrationManager.AddFakeMigrations(fakesToAdd);
-        runner.Build();
+        if (fakesToAdd > 0) runner.Build();
+
+        foreach (var approach in approaches)
+            results.Add(runner.Run(
+                new BenchmarkScenario(approach, "migrations", migrationCount, TestRepeat: 10, MaxParallelThreads: 4)));
     }
-
-    foreach (var approach in approaches)
-        results.Add(runner.Run(
-            new BenchmarkScenario(approach, "migrations", migrationCount, TestRepeat: 10, MaxParallelThreads: 4)));
-
-    if (fakesToAdd > 0)
+    finally
     {
-        migrationManager.RemoveFakeMigrations();
-        runner.Build();
+        if (fakesToAdd > 0)
+        {
+            migrationManager.RemoveFakeMigrations();
+            runner.Build();
+        }
     }
 }
 
