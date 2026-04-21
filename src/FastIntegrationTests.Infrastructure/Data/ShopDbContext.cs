@@ -23,6 +23,21 @@ public class ShopDbContext : DbContext
     /// <summary>Позиции заказов.</summary>
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
+    /// <summary>Категории товаров.</summary>
+    public DbSet<Category> Categories => Set<Category>();
+
+    /// <summary>Покупатели.</summary>
+    public DbSet<Customer> Customers => Set<Customer>();
+
+    /// <summary>Поставщики.</summary>
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+
+    /// <summary>Отзывы.</summary>
+    public DbSet<Review> Reviews => Set<Review>();
+
+    /// <summary>Скидки.</summary>
+    public DbSet<Discount> Discounts => Set<Discount>();
+
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
