@@ -9,7 +9,7 @@ namespace BenchmarkRunner.Models;
 /// <param name="MigrationCount">Количество миграций</param>
 /// <param name="TestRepeat">Количество повторов теста</param>
 /// <param name="MaxParallelThreads">Максимальное количество параллельных потоков</param>
-record BenchmarkScenario(
+public record BenchmarkScenario(
     string Approach,
     string ScenarioName,
     int MigrationCount,

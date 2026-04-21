@@ -7,7 +7,7 @@ namespace BenchmarkRunner.Models;
 /// <param name="Scenario">Сценарий бенчмарка</param>
 /// <param name="ElapsedSeconds">Время выполнения в секундах</param>
 /// <param name="Success">Успешное ли выполнение</param>
-record BenchmarkResult(
+public record BenchmarkResult(
     BenchmarkScenario Scenario,
     double ElapsedSeconds,
     bool Success
