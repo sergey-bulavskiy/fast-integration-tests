@@ -87,14 +87,21 @@ FROM generate_series(1, 300) gs;
     private static string OddDownSql(int i) =>
         $"DROP TABLE IF EXISTS benchmark_ref_{i:D3};";
 
+    // Чётные: справочная таблица + 150 строк seed (~5–10 мс).
+    // ALTER TABLE на Products не используется — таблица пустая при миграции (no-op UPDATE).
     private static string EvenUpSql(int i) =>
 $@"
-ALTER TABLE """"Products"""" ADD COLUMN benchmark_col_{i:D3} TEXT NULL;
-UPDATE """"Products"""" SET benchmark_col_{i:D3} = 'default_value';
-ALTER TABLE """"Products"""" ALTER COLUMN benchmark_col_{i:D3} SET NOT NULL;
-ALTER TABLE """"Products"""" ALTER COLUMN benchmark_col_{i:D3} SET DEFAULT 'default_value';
+CREATE TABLE benchmark_lookup_{i:D3} (
+    id         SERIAL       PRIMARY KEY,
+    key        VARCHAR(30)  NOT NULL UNIQUE,
+    value      TEXT         NOT NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+INSERT INTO benchmark_lookup_{i:D3} (key, value)
+SELECT 'KEY_' || gs, 'Lookup value ' || gs
+FROM generate_series(1, 150) gs;
 ";
 
     private static string EvenDownSql(int i) =>
-        $@"ALTER TABLE """"Products"""" DROP COLUMN IF EXISTS benchmark_col_{i:D3};";
+        $"DROP TABLE IF EXISTS benchmark_lookup_{i:D3};";
 }
