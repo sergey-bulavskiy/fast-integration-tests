@@ -22,7 +22,11 @@ var migrationManager = new MigrationManager(repoRoot);
 var results          = new List<BenchmarkResult>();
 
 const int BaseMigrations = 17;
-var approaches = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
+var approaches         = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
+var migrationCounts    = new[] { 17, 67, 117 };
+var scalingRepeats     = new[] { 1, 5, 10, 20, 50 };
+var parallelismThreads = new[] { 1, 2, 4, 8 };
+runner.SetTotalRuns((migrationCounts.Length + scalingRepeats.Length + parallelismThreads.Length) * approaches.Length);
 
 Console.WriteLine("=== Integration Test Benchmark Runner ===");
 Console.WriteLine($"Repo:    {repoRoot}");
@@ -44,11 +48,11 @@ runner.Build();
 // скачаны и сетевые соединения прогреты до первой точки Сценария 1.
 // Respawn и Testcontainers также используют образ postgres — он будет в кеше Docker.
 Console.WriteLine("\n═══ Warmup (не входит в отчёт) ═══");
-runner.Run(new BenchmarkScenario("IntegreSQL", "warmup", BaseMigrations, TestRepeat: 1, MaxParallelThreads: defaultThreads));
+runner.Warmup(new BenchmarkScenario("IntegreSQL", "warmup", BaseMigrations, TestRepeat: 1, MaxParallelThreads: defaultThreads));
 
 // ─── Сценарий 1: влияние числа миграций ────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 1: Migration Count Impact ═══");
-foreach (var migrationCount in new[] { 17, 67, 117 })
+foreach (var migrationCount in migrationCounts)
 {
     var fakesToAdd = migrationCount - BaseMigrations;
     try
@@ -75,17 +79,17 @@ foreach (var migrationCount in new[] { 17, 67, 117 })
 
 // ─── Сценарий 2: масштаб числа тестов ──────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 2: Test Count Scaling ═══");
-foreach (var repeat in new[] { 1, 5, 10, 20, 50 })
+foreach (var repeat in scalingRepeats)
     foreach (var approach in approaches)
         results.Add(runner.Run(
             new BenchmarkScenario(approach, "scale", BaseMigrations, TestRepeat: repeat, MaxParallelThreads: defaultThreads)));
 
 // ─── Сценарий 3: параллелизм ────────────────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 3: Parallelism ═══");
-foreach (var threads in new[] { 1, 2, 4, 8 })
+foreach (var parallelism in parallelismThreads)
     foreach (var approach in approaches)
         results.Add(runner.Run(
-            new BenchmarkScenario(approach, "parallelism", BaseMigrations, TestRepeat: defaultRepeat, MaxParallelThreads: threads)));
+            new BenchmarkScenario(approach, "parallelism", BaseMigrations, TestRepeat: defaultRepeat, MaxParallelThreads: parallelism)));
 
 // ─── Генерация отчёта ───────────────────────────────────────────────────────
 var report = new BenchmarkReport(DateTime.UtcNow, Environment.MachineName, results);
