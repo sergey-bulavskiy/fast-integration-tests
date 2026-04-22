@@ -70,7 +70,7 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Catego
 **IntegreSQL** (`AppServiceTestBase` / `ComponentTestBase`):
 - Один пара контейнеров (PostgreSQL + IntegreSQL) на весь процесс — `IntegresSqlContainerManager` (static Lazy).
 - Миграции применяются **один раз** как шаблонная БД `"shop-default"`.
-- Каждый тест получает **клон шаблона** (~5 мс) и после завершения клон удаляется.
+- Каждый тест получает **клон шаблона** (~5 мс) и после завершения возвращает его в пул с пометкой «пересоздать» (`DropDatabaseOnRemove=true`).
 - Тесты полностью изолированы — параллелизм внутри класса возможен.
 
 **Respawn** (`RespawnServiceTestBase` / `RespawnApiTestBase`):
@@ -92,7 +92,7 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Catego
 |---|---|---|---|
 | Контейнер | 1 на процесс | 1 на класс | 1 на класс |
 | Миграции | 1 раз (весь процесс) | 1 раз (класс) | 1 раз (класс) |
-| Сброс данных | удаление клона | TRUNCATE ~1 мс | EnsureDeleted ~200 мс |
+| Сброс данных | возврат клона в пул (recreate) | TRUNCATE ~1 мс | EnsureDeleted ~200 мс |
 | TestServer (API) | новый на каждый тест | 1 на класс | новый на каждый тест |
 | Параллелизм внутри класса | да | нет | да |
 
