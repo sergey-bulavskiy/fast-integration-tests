@@ -21,7 +21,7 @@ var runner           = new TestRunner(repoRoot);
 var migrationManager = new MigrationManager(repoRoot);
 var results          = new List<BenchmarkResult>();
 
-const int BaseMigrations = 16;
+const int BaseMigrations = 17;
 var approaches = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
 
 Console.WriteLine("=== Integration Test Benchmark Runner ===");
@@ -29,9 +29,12 @@ Console.WriteLine($"Repo:    {repoRoot}");
 Console.WriteLine($"Machine: {Environment.MachineName}");
 Console.WriteLine($"Time:    {DateTime.Now:yyyy-MM-dd HH:mm}");
 Console.WriteLine($"Config:  threads={defaultThreads}, repeat={defaultRepeat}");
-Console.WriteLine("\nDocker must be running. Full run takes 15-30 min.");
+Console.WriteLine("\nDocker must be running. Full run takes ~1-2 hours.");
 Console.WriteLine("Press Enter to start, Ctrl+C to cancel...");
 Console.ReadLine();
+
+// Убрать фейковые миграции, которые могли остаться от прерванного прогона
+migrationManager.RemoveFakeMigrations();
 
 // Первичная сборка
 runner.Build();
@@ -45,7 +48,7 @@ runner.Run(new BenchmarkScenario("IntegreSQL", "warmup", BaseMigrations, TestRep
 
 // ─── Сценарий 1: влияние числа миграций ────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 1: Migration Count Impact ═══");
-foreach (var migrationCount in new[] { 16, 66, 116 })
+foreach (var migrationCount in new[] { 17, 67, 117 })
 {
     var fakesToAdd = migrationCount - BaseMigrations;
     try
