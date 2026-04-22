@@ -31,19 +31,19 @@
 
   <div class="card">
     <h2>Сценарий 1 — Влияние числа миграций</h2>
-    <p class="subtitle">TEST_REPEAT=38 (~2000 вызовов), потоков=8 &nbsp;|&nbsp; Ось X: количество миграций в проекте</p>
+    <p class="subtitle" id="subtitle-migrations"></p>
     <canvas id="chart-migrations"></canvas>
   </div>
 
   <div class="card">
     <h2>Сценарий 2 — Масштаб числа тестов</h2>
-    <p class="subtitle">16 миграций, потоков=4 &nbsp;|&nbsp; Ось X: TEST_REPEAT (число повторов каждого теста)</p>
+    <p class="subtitle" id="subtitle-scale"></p>
     <canvas id="chart-scale"></canvas>
   </div>
 
   <div class="card">
     <h2>Сценарий 3 — Параллелизм</h2>
-    <p class="subtitle">16 миграций, TEST_REPEAT=20 &nbsp;|&nbsp; Ось X: MaxParallelThreads</p>
+    <p class="subtitle" id="subtitle-parallelism"></p>
     <canvas id="chart-parallelism"></canvas>
   </div>
 
@@ -53,6 +53,23 @@
     document.getElementById('meta').textContent =
       'Сгенерировано: ' + new Date(data.generatedAt).toLocaleString('ru') +
       '  |  Машина: ' + data.machineName;
+
+    (function buildSubtitles() {
+      const m1 = data.results.find(r => r.scenario.scenarioName === 'migrations');
+      if (m1) document.getElementById('subtitle-migrations').textContent =
+        `TEST_REPEAT=${m1.scenario.testRepeat}, потоков=${m1.scenario.maxParallelThreads}` +
+        ` | Ось X: количество миграций в проекте`;
+
+      const m2 = data.results.find(r => r.scenario.scenarioName === 'scale');
+      if (m2) document.getElementById('subtitle-scale').textContent =
+        `${m2.scenario.migrationCount} миграций, потоков=${m2.scenario.maxParallelThreads}` +
+        ` | Ось X: TEST_REPEAT (число повторов каждого теста)`;
+
+      const m3 = data.results.find(r => r.scenario.scenarioName === 'parallelism');
+      if (m3) document.getElementById('subtitle-parallelism').textContent =
+        `${m3.scenario.migrationCount} миграций, TEST_REPEAT=${m3.scenario.testRepeat}` +
+        ` | Ось X: MaxParallelThreads`;
+    })();
 
     const COLORS = {
       IntegreSQL:     { border: 'rgb(59,130,246)',  bg: 'rgba(59,130,246,0.12)'  },

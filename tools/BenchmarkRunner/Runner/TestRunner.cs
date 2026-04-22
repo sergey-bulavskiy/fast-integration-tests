@@ -1,6 +1,6 @@
 // tools/BenchmarkRunner/Runner/TestRunner.cs
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text;
 using BenchmarkRunner.Models;
 
 namespace BenchmarkRunner.Runner;
@@ -9,11 +9,16 @@ namespace BenchmarkRunner.Runner;
 class TestRunner
 {
     private readonly string _repoRoot;
+    private readonly TimeSpan _timeout;
     private int _totalRuns;
     private int _currentRun;
 
-    /// <summary>Инициализирует runner с корневой директорией репозитория.</summary>
-    public TestRunner(string repoRoot) => _repoRoot = repoRoot;
+    /// <summary>Инициализирует runner с корневой директорией репозитория и таймаутом одного прогона.</summary>
+    public TestRunner(string repoRoot, TimeSpan timeout)
+    {
+        _repoRoot = repoRoot;
+        _timeout  = timeout;
+    }
 
     /// <summary>Устанавливает общее число прогонов для отображения прогресса.</summary>
     public void SetTotalRuns(int total) => _totalRuns = total;
@@ -95,14 +100,20 @@ class TestRunner
         if (env is { } e)
             psi.Environment[e.Key] = e.Value;
 
-        var sb = new StringBuilder();
+        var lines = new ConcurrentQueue<string>();
         using var process = Process.Start(psi)!;
-        process.OutputDataReceived += (_, ev) => { if (ev.Data is not null) sb.AppendLine(ev.Data); };
-        process.ErrorDataReceived  += (_, ev) => { if (ev.Data is not null) sb.AppendLine(ev.Data); };
+        process.OutputDataReceived += (_, ev) => { if (ev.Data is not null) lines.Enqueue(ev.Data); };
+        process.ErrorDataReceived  += (_, ev) => { if (ev.Data is not null) lines.Enqueue(ev.Data); };
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        process.WaitForExit();
 
-        return (sb.ToString(), process.ExitCode);
+        var completed = process.WaitForExit(_timeout);
+        if (!completed)
+        {
+            process.Kill(entireProcessTree: true);
+            return ($"TIMEOUT: process exceeded {_timeout.TotalMinutes:F0} minutes", -1);
+        }
+
+        return (string.Join(Environment.NewLine, lines), process.ExitCode);
     }
 }

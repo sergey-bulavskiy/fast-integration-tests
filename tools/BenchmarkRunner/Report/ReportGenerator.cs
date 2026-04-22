@@ -10,6 +10,12 @@ public class ReportGenerator
     private readonly string _templatePath;
     private readonly string _outputDir;
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented        = true,
+    };
+
     /// <summary>Инициализирует генератор с корневой директорией репозитория.</summary>
     public ReportGenerator(string repoRoot)
     {
@@ -17,22 +23,21 @@ public class ReportGenerator
         _outputDir    = Path.Combine(repoRoot, "benchmark-results");
     }
 
+    /// <summary>Сохраняет промежуточный results.json после каждой точки данных.</summary>
+    public void SaveJson(BenchmarkReport report)
+    {
+        Directory.CreateDirectory(_outputDir);
+        var json = JsonSerializer.Serialize(report, JsonOptions);
+        File.WriteAllText(Path.Combine(_outputDir, "results.json"), json);
+    }
+
     /// <summary>Сериализует отчёт в JSON, инлайнит в HTML шаблон, сохраняет оба файла.</summary>
     public void Generate(BenchmarkReport report)
     {
-        Directory.CreateDirectory(_outputDir);
-
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented        = true,
-        };
-
-        var json     = JsonSerializer.Serialize(report, options);
-        var jsonPath = Path.Combine(_outputDir, "results.json");
-        File.WriteAllText(jsonPath, json);
+        SaveJson(report);
         Console.WriteLine($"\n[REPORT] results.json saved");
 
+        var json     = JsonSerializer.Serialize(report, JsonOptions);
         var template = File.ReadAllText(_templatePath);
         var html     = template.Replace("/*INJECT_JSON*/", json);
         var htmlPath = Path.Combine(_outputDir, "report.html");
