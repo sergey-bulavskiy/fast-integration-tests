@@ -10,6 +10,7 @@ class TestRunner
 {
     private readonly string _repoRoot;
     private readonly TimeSpan _timeout;
+    private readonly string _logPath;
     private int _totalRuns;
     private int _currentRun;
 
@@ -18,6 +19,7 @@ class TestRunner
     {
         _repoRoot = repoRoot;
         _timeout  = timeout;
+        _logPath  = Path.Combine(repoRoot, "benchmark-results", "last-failure.log");
     }
 
     /// <summary>Устанавливает общее число прогонов для отображения прогресса.</summary>
@@ -31,7 +33,8 @@ class TestRunner
         if (code != 0)
         {
             Console.WriteLine("FAIL");
-            PrintOutput(output);
+            var buildScenario = new BenchmarkScenario("build", "build", 0, 0, 0);
+            LogFailure(buildScenario, output);
             throw new Exception($"Build failed (exit code {code})");
         }
         Console.WriteLine("OK");
@@ -43,6 +46,8 @@ class TestRunner
         Console.Write(FormatPrefix("[WRM]", scenario));
         var (elapsed, success, output) = RunTest(scenario);
         Console.WriteLine(FormatSuffix(elapsed, success));
+        if (!success)
+            LogFailure(scenario, output);
         return new BenchmarkResult(scenario, elapsed, success);
     }
 
@@ -55,7 +60,7 @@ class TestRunner
         var (elapsed, success, output) = RunTest(scenario);
         Console.WriteLine(FormatSuffix(elapsed, success));
         if (!success)
-            PrintOutput(output);
+            LogFailure(scenario, output);
         return new BenchmarkResult(scenario, elapsed, success);
     }
 
@@ -81,11 +86,15 @@ class TestRunner
     private static string FormatSuffix(double elapsed, bool success) =>
         $" {elapsed,6:F1}s  {(success ? "✓" : "✗ FAIL")}";
 
-    private static void PrintOutput(string output)
+    private void LogFailure(BenchmarkScenario scenario, string output)
     {
-        Console.WriteLine("\n── captured output ──────────────────────────────────────");
-        Console.WriteLine(output.TrimEnd());
-        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+        Directory.CreateDirectory(Path.GetDirectoryName(_logPath)!);
+        var header =
+            $"=== FAILURE: {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===" + Environment.NewLine +
+            $"Scenario: {scenario.Approach} / {scenario.ScenarioName} / m={scenario.MigrationCount} r={scenario.TestRepeat} t={scenario.MaxParallelThreads}" + Environment.NewLine +
+            new string('─', 60) + Environment.NewLine;
+        File.WriteAllText(_logPath, header + output.TrimEnd() + Environment.NewLine);
+        Console.WriteLine($"  → see {_logPath}");
     }
 
     private (string Output, int Code) RunCapture(string filename, string args, (string Key, string Value)? env = null)
