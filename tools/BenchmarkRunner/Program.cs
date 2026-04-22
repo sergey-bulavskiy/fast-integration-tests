@@ -23,7 +23,7 @@ var results          = new List<BenchmarkResult>();
 
 const int BaseMigrations = 17;
 var approaches         = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
-var migrationCounts    = new[] { 17, 67, 117 };
+var migrationCounts    = new[] { 17, 42, 67, 92, 117 };
 var scalingRepeats     = new[] { 1, 5, 10, 20, 50 };
 var parallelismThreads = new[] { 1, 2, 4, 8 };
 runner.SetTotalRuns((migrationCounts.Length + scalingRepeats.Length + parallelismThreads.Length) * approaches.Length);
