@@ -43,12 +43,13 @@ migrationManager.RemoveFakeMigrations();
 // Первичная сборка
 runner.Build();
 
-// ─── Warmup: разогреть Docker + PostgreSQL до начала измерений ─────────────
-// Результат не сохраняется — нужен чтобы Docker-образ postgres и IntegreSQL были
-// скачаны и сетевые соединения прогреты до первой точки Сценария 1.
-// Respawn и Testcontainers также используют образ postgres — он будет в кеше Docker.
+// ─── Warmup: разогреть Docker + JIT для всех трёх подходов ─────────────────
+// Каждый подход запускается по одному разу (TEST_REPEAT=1), результаты не сохраняются.
+// Цель: вытащить Docker-образы, прогреть JIT теста и container-startup каждого подхода
+// до первой измеряемой точки Сценария 1.
 Console.WriteLine("\n═══ Warmup (не входит в отчёт) ═══");
-runner.Warmup(new BenchmarkScenario("IntegreSQL", "warmup", BaseMigrations, TestRepeat: 1, MaxParallelThreads: defaultThreads));
+foreach (var approach in approaches)
+    runner.Warmup(new BenchmarkScenario(approach, "warmup", BaseMigrations, TestRepeat: 1, MaxParallelThreads: defaultThreads));
 
 // ─── Сценарий 1: влияние числа миграций ────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 1: Migration Count Impact ═══");
