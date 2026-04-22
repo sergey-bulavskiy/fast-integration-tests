@@ -64,7 +64,7 @@ foreach (var migrationCount in migrationCounts)
         }
 
         foreach (var approach in approaches)
-            results.Add(runner.Run(
+            results.Add(RunOrAbort(
                 new BenchmarkScenario(approach, "migrations", migrationCount, TestRepeat: defaultRepeat, MaxParallelThreads: defaultThreads)));
     }
     finally
@@ -81,14 +81,14 @@ foreach (var migrationCount in migrationCounts)
 Console.WriteLine("\n═══ Scenario 2: Test Count Scaling ═══");
 foreach (var repeat in scalingRepeats)
     foreach (var approach in approaches)
-        results.Add(runner.Run(
+        results.Add(RunOrAbort(
             new BenchmarkScenario(approach, "scale", BaseMigrations, TestRepeat: repeat, MaxParallelThreads: defaultThreads)));
 
 // ─── Сценарий 3: параллелизм ────────────────────────────────────────────────
 Console.WriteLine("\n═══ Scenario 3: Parallelism ═══");
 foreach (var parallelism in parallelismThreads)
     foreach (var approach in approaches)
-        results.Add(runner.Run(
+        results.Add(RunOrAbort(
             new BenchmarkScenario(approach, "parallelism", BaseMigrations, TestRepeat: defaultRepeat, MaxParallelThreads: parallelism)));
 
 // ─── Генерация отчёта ───────────────────────────────────────────────────────
@@ -98,7 +98,20 @@ new ReportGenerator(repoRoot).Generate(report);
 Console.WriteLine("\n=== Done! ===");
 Console.WriteLine("Open: benchmark-results/report.html");
 
-// ─── Вспомогательная функция ────────────────────────────────────────────────
+// ─── Вспомогательные функции ────────────────────────────────────────────────
+BenchmarkResult RunOrAbort(BenchmarkScenario scenario)
+{
+    var result = runner.Run(scenario);
+    if (!result.Success)
+    {
+        migrationManager.RemoveFakeMigrations();
+        Console.WriteLine($"\n=== BENCHMARK ABORTED ===");
+        Console.WriteLine("Fix the failing tests and re-run the benchmark.");
+        Environment.Exit(1);
+    }
+    return result;
+}
+
 static string FindRepoRoot()
 {
     var dir = Directory.GetCurrentDirectory();
