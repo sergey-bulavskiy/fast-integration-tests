@@ -490,3 +490,7 @@ appsettings.*.local.json
 .worktrees/
 
 benchmark-results/
+docs/speech/
+
+# Фейковые миграции для бенчмарка (год 2999 — генерируются и удаляются автоматически)
+**/Migrations/2999*
