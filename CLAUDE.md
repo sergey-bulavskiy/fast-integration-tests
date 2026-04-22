@@ -70,20 +70,20 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Catego
 **IntegreSQL** (`AppServiceTestBase` / `ComponentTestBase`):
 - Один пара контейнеров (PostgreSQL + IntegreSQL) на весь процесс — `IntegresSqlContainerManager` (static Lazy).
 - Миграции применяются **один раз** как шаблонная БД `"shop-default"`.
-- Каждый тест получает **клон шаблона** (~5 мс) и после завершения возвращает его в пул с пометкой «пересоздать» (`DropDatabaseOnRemove=true`).
+- Каждый тест получает **клон шаблона** и после завершения возвращает его в пул с пометкой «пересоздать» (`DropDatabaseOnRemove=true`).
 - Тесты полностью изолированы — параллелизм внутри класса возможен.
 
 **Respawn** (`RespawnServiceTestBase` / `RespawnApiTestBase`):
 - Один контейнер PostgreSQL **на класс** (через `IClassFixture<RespawnFixture>`).
 - Миграции применяются **один раз на класс** в `RespawnFixture.InitializeAsync()`.
-- Между тестами — `TRUNCATE CASCADE` через Respawn (~1 мс), схема сохраняется.
+- Между тестами — `TRUNCATE CASCADE` через Respawn, схема сохраняется.
 - TestServer и HttpClient создаются **один раз на класс** и переиспользуются.
 - Тесты внутри одного класса выполняются **последовательно** (общая БД).
 
 **Testcontainers** (`ContainerServiceTestBase` / `ContainerApiTestBase`):
 - Один контейнер PostgreSQL **на класс** (через `IClassFixture<ContainerFixture>`).
 - Миграции применяются **один раз на класс**.
-- Между тестами — пересоздание БД через `EnsureDeleted` + `MigrateAsync` (~200 мс).
+- Между тестами — пересоздание БД через `EnsureDeleted` + `MigrateAsync`.
 - TestServer и HttpClient создаются **на каждый тест**.
 
 #### Сравнение по ключевым параметрам
@@ -92,7 +92,7 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Catego
 |---|---|---|---|
 | Контейнер | 1 на процесс | 1 на класс | 1 на класс |
 | Миграции | 1 раз (весь процесс) | 1 раз (класс) | 1 раз (класс) |
-| Сброс данных | возврат клона в пул (recreate) | TRUNCATE ~1 мс | EnsureDeleted ~200 мс |
+| Сброс данных | возврат клона в пул (recreate) | TRUNCATE CASCADE | EnsureDeleted + Migrate |
 | TestServer (API) | новый на каждый тест | 1 на класс | новый на каждый тест |
 | Параллелизм внутри класса | да | нет | да |
 
