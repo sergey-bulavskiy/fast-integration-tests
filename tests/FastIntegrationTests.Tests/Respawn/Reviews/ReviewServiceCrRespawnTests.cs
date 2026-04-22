@@ -1,0 +1,78 @@
+namespace FastIntegrationTests.Tests.Respawn.Reviews;
+
+/// <summary>
+/// Тесты сервисного уровня: GetAll, GetById, Create для ReviewService.
+/// Каждый тест сбрасывает данные через Respawn (~1 мс), схема сохраняется.
+/// </summary>
+public class ReviewServiceCrRespawnTests : RespawnServiceTestBase
+{
+    private IReviewService Sut = null!;
+
+    /// <summary>
+    /// Создаёт новый экземпляр <see cref="ReviewServiceCrRespawnTests"/>.
+    /// </summary>
+    /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
+    public ReviewServiceCrRespawnTests(RespawnFixture fixture) : base(fixture) { }
+
+    /// <inheritdoc/>
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        Sut = new ReviewService(new ReviewRepository(Context));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAllAsync_WhenNoReviews_ReturnsEmptyList(int _)
+    {
+        var result = await Sut.GetAllAsync();
+
+        Assert.Empty(result);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetAllAsync_WhenReviewsExist_ReturnsAllReviews(int _)
+    {
+        await Sut.CreateAsync(new CreateReviewRequest { Title = "Отлично", Body = "Всё понравилось", Rating = 5 });
+        await Sut.CreateAsync(new CreateReviewRequest { Title = "Неплохо", Body = "В целом хорошо", Rating = 4 });
+
+        var result = await Sut.GetAllAsync();
+
+        Assert.Equal(2, result.Count);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetByIdAsync_WhenExists_ReturnsReview(int _)
+    {
+        var created = await Sut.CreateAsync(new CreateReviewRequest { Title = "Хороший товар", Body = "Рекомендую", Rating = 4 });
+
+        var result = await Sut.GetByIdAsync(created.Id);
+
+        Assert.Equal(created.Id, result.Id);
+        Assert.Equal("Хороший товар", result.Title);
+        Assert.Equal(4, result.Rating);
+        Assert.Equal(ReviewStatus.Pending, result.Status);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    {
+        await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(Guid.NewGuid()));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateAsync_PersistsAndReturns(int _)
+    {
+        var result = await Sut.CreateAsync(new CreateReviewRequest { Title = "Супер", Body = "Лучший товар", Rating = 5 });
+
+        Assert.NotEqual(Guid.Empty, result.Id);
+        Assert.Equal("Супер", result.Title);
+        Assert.Equal(5, result.Rating);
+        Assert.Equal(ReviewStatus.Pending, result.Status);
+        Assert.True(result.CreatedAt > DateTime.UtcNow.AddSeconds(-5));
+    }
+}
