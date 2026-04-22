@@ -78,6 +78,64 @@ New → Confirmed → Shipped → Completed
  └──────────────→ Cancelled
 ```
 
+### Categories
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/categories` | Список всех категорий |
+| GET | `/api/categories/{id}` | Категория по ID |
+| POST | `/api/categories` | Создать категорию |
+| PUT | `/api/categories/{id}` | Обновить категорию |
+| DELETE | `/api/categories/{id}` | Удалить категорию |
+
+### Customers
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/customers` | Список всех покупателей |
+| GET | `/api/customers/{id}` | Покупатель по ID |
+| POST | `/api/customers` | Создать покупателя |
+| PUT | `/api/customers/{id}` | Обновить покупателя |
+| DELETE | `/api/customers/{id}` | Удалить покупателя |
+| POST | `/api/customers/{id}/ban` | Заблокировать |
+| POST | `/api/customers/{id}/activate` | Активировать |
+| POST | `/api/customers/{id}/deactivate` | Деактивировать |
+
+### Suppliers
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/suppliers` | Список всех поставщиков |
+| GET | `/api/suppliers/{id}` | Поставщик по ID |
+| POST | `/api/suppliers` | Создать поставщика |
+| PUT | `/api/suppliers/{id}` | Обновить поставщика |
+| DELETE | `/api/suppliers/{id}` | Удалить поставщика |
+| POST | `/api/suppliers/{id}/activate` | Активировать |
+| POST | `/api/suppliers/{id}/deactivate` | Деактивировать |
+
+### Reviews
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/reviews` | Список всех отзывов |
+| GET | `/api/reviews/{id}` | Отзыв по ID |
+| POST | `/api/reviews` | Создать отзыв (рейтинг 1–5) |
+| DELETE | `/api/reviews/{id}` | Удалить отзыв |
+| POST | `/api/reviews/{id}/approve` | Одобрить (Pending → Approved) |
+| POST | `/api/reviews/{id}/reject` | Отклонить (Pending → Rejected) |
+
+### Discounts
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/discounts` | Список всех скидок |
+| GET | `/api/discounts/{id}` | Скидка по ID |
+| POST | `/api/discounts` | Создать скидку (процент 1–100) |
+| PUT | `/api/discounts/{id}` | Обновить скидку |
+| DELETE | `/api/discounts/{id}` | Удалить скидку |
+| POST | `/api/discounts/{id}/activate` | Активировать |
+| POST | `/api/discounts/{id}/deactivate` | Деактивировать |
+
 ---
 
 ## Запуск тестов
@@ -85,7 +143,7 @@ New → Confirmed → Shipped → Completed
 Docker должен быть запущен. Контейнеры поднимаются автоматически через Testcontainers.
 
 ```bash
-# Все 159 тестов (три подхода вместе)
+# Все 495 тестов (три подхода вместе, TEST_REPEAT=1)
 dotnet test tests/FastIntegrationTests.Tests
 
 # Один подход
@@ -93,9 +151,10 @@ dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
 
-# Отдельный тест-класс
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiTests"
+# Отдельный тест-класс (примеры)
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceCrTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiUdTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~CategoryServiceCrTests"
 ```
 
 ### PowerShell скрипты (с замером времени)
@@ -159,15 +218,16 @@ open benchmark-results/report.html    # macOS
 ```
 src/
 ├── FastIntegrationTests.Application/    # Домен: сущности, DTO, сервисы, исключения
-├── FastIntegrationTests.Infrastructure/ # EF Core: DbContext, репозитории, миграции (16 шт.)
+├── FastIntegrationTests.Infrastructure/ # EF Core: DbContext, репозитории, миграции (17 шт.)
 └── FastIntegrationTests.WebApi/         # ASP.NET Core: контроллеры, Program.cs
 
 tests/
 └── FastIntegrationTests.Tests/
     ├── Infrastructure/                  # Фикстуры, базовые классы для трёх подходов
-    ├── IntegreSQL/                      # 53 теста: Products/, Orders/
-    ├── Respawn/                         # 53 теста: Products/, Orders/
-    └── Testcontainers/                  # 53 теста: Products/, Orders/
+    ├── IntegreSQL/                      # 165 тестов: Products/, Orders/, Categories/,
+    │                                   #             Customers/, Suppliers/, Reviews/, Discounts/
+    ├── Respawn/                         # 165 тестов: те же 7 папок
+    └── Testcontainers/                  # 165 тестов: те же 7 папок
 
 tools/
 └── BenchmarkRunner/                     # Консольный инструмент бенчмарка

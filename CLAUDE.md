@@ -53,11 +53,10 @@ $env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "Full
 # Переопределить количество потоков прямо из CLI
 TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL" -- xUnit.MaxParallelThreads=8
 
-# Запустить тесты отдельного класса
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductsApiTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrderServiceTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiTests"
+# Запустить тесты отдельного класса (примеры — суффиксы Cr/Ud, подход без суффикса/Respawn/Container)
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceCrTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiUdContainerTests"
+dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~CategoryServiceUdRespawnTests"
 ```
 
 ### Как работают тесты
