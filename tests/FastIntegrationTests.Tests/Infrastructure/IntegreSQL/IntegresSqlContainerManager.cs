@@ -57,7 +57,26 @@ public static class IntegresSqlContainerManager
                 Host = "localhost",
                 Port = pgContainer.GetMappedPublicPort(5432)
             }
-        );
+        )
+        {
+            // Без этого RemoveDatabase — no-op, и IntegreSQL не знает, что тест завершился.
+            // Он принудительно рециклирует слоты (DROP + CREATE FROM TEMPLATE) по истечении
+            // пула (24 БД), попадая на долгие тесты вроде FullLifecycle → 3D000 под нагрузкой.
+            // При DropDatabaseOnRemove=true каждый DisposeAsync вызывает POST .../recreate:
+            // IntegreSQL сразу помечает БД как свободную и пересоздаёт её чисто.
+            DropDatabaseOnRemove = true,
+        };
+
+        // Прогреваем шаблонную БД до того, как параллельные тест-классы начнут за неё гонку.
+        // Lazy<Task<>> гарантирует, что этот код выполнится ровно один раз до того, как
+        // GetStateAsync() вернёт результат. Без прогрева все N параллельных классов одновременно
+        // видят «шаблон не готов» и пытаются его создать — MccSoft.IntegreSql.EF пересоздаёт
+        // шаблон на каждую попытку, что дропает уже выданные клоны.
+        // RemoveDatabase здесь правомерен: DropDatabaseOnRemove=true вызывает POST .../recreate,
+        // который возвращает прогревочную БД в пул чисто, без гонок.
+        var warmupCs = await initializer.CreateDatabaseGetConnectionString(
+            IntegresSqlDefaults.SeedingOptions);
+        await initializer.RemoveDatabase(warmupCs);
 
         return new IntegresSqlState(initializer);
     }

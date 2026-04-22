@@ -29,7 +29,7 @@ public abstract class AppServiceTestBase : IAsyncLifetime
         Context = new ShopDbContext(options);
     }
 
-    /// <summary>Освобождает контекст и возвращает клонированную БД в пул IntegreSQL.</summary>
+    /// <summary>Освобождает контекст и возвращает клонированную БД в пул IntegreSQL с пометкой «пересоздать из шаблона».</summary>
     public virtual async Task DisposeAsync()
     {
         await Context.DisposeAsync();

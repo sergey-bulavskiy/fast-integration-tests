@@ -1,5 +1,6 @@
 using FastIntegrationTests.Infrastructure.Data;
 using MccSoft.IntegreSql.EF.DatabaseInitialization;
+using Npgsql;
 
 namespace FastIntegrationTests.Tests.Infrastructure.IntegreSQL;
 
@@ -12,7 +13,14 @@ internal static class IntegresSqlDefaults
     internal static readonly DatabaseSeedingOptions<ShopDbContext> SeedingOptions =
         new(
             Name: "shop-default",
-            SeedingFunction: async ctx => await ctx.Database.MigrateAsync(),
+            SeedingFunction: async ctx =>
+            {
+                await ctx.Database.MigrateAsync();
+                // После миграций закрываем все pooled-соединения Npgsql к шаблонной БД.
+                // Без этого IntegreSQL падает при CREATE DATABASE ... TEMPLATE с ошибкой
+                // "source database is being accessed by other users".
+                NpgsqlConnection.ClearAllPools();
+            },
             DisableEnsureCreated: true,
             DbContextFactory: opts => new ShopDbContext(opts)
         );
