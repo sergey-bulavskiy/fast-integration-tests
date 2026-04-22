@@ -124,8 +124,6 @@ BenchmarkResult RunOrAbort(BenchmarkScenario scenario)
     return result;
 }
 
-class BenchmarkAbortedException : Exception;
-
 static string FindRepoRoot()
 {
     var dir = Directory.GetCurrentDirectory();
@@ -137,3 +135,5 @@ static string FindRepoRoot()
     }
     throw new Exception("Repo root not found (FastIntegrationTests.slnx missing)");
 }
+
+class BenchmarkAbortedException : Exception;
