@@ -135,6 +135,10 @@ open benchmark-results/report.html    # macOS
 | `--repeat N` / `-r N` | 12 | Сценарии 1 и 3 (повторы не варьируются) |
 | `--timeout N` | 50 | Таймаут одного прогона dotnet test (минуты) |
 
+> **Важно:** константа `BaseTestCount` в `tools/BenchmarkRunner/Program.cs` — хардкод.
+> При добавлении или удалении тест-методов обновить вручную.
+> Актуальное значение: `dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --list-tests 2>/dev/null | grep -c "::"`
+
 ### Три сценария
 
 | Сценарий | Фиксируется | Варьируется |
