@@ -28,7 +28,11 @@ public class RespawnFixture : IAsyncLifetime
         var options = new DbContextOptionsBuilder<ShopDbContext>()
             .UseNpgsql(ConnectionString).Options;
         await using var ctx = new ShopDbContext(options);
+
+        var migSw = System.Diagnostics.Stopwatch.StartNew();
         await ctx.Database.MigrateAsync();
+        migSw.Stop();
+        Console.WriteLine($"##BENCH[migration]={migSw.ElapsedMilliseconds}");
 
         await using var conn = new NpgsqlConnection(ConnectionString);
         await conn.OpenAsync();
@@ -44,7 +48,10 @@ public class RespawnFixture : IAsyncLifetime
     {
         await using var conn = new NpgsqlConnection(ConnectionString);
         await conn.OpenAsync();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         await _respawner.ResetAsync(conn);
+        sw.Stop();
+        Console.WriteLine($"##BENCH[reset]={sw.ElapsedMilliseconds}");
     }
 
     /// <inheritdoc />
