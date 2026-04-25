@@ -76,9 +76,8 @@
         `${m3.scenario.migrationCount} миграций, TEST_REPEAT=${m3.scenario.testRepeat}` +
         ` | Ось X: MaxParallelThreads`;
 
-      const m4 = data.results.find(r => r.scenario.scenarioName === 'migrations');
-      if (m4) document.getElementById('subtitle-timing').textContent =
-        `TEST_REPEAT=${m4.scenario.testRepeat}, потоков=${m4.scenario.maxParallelThreads}` +
+      if (m1) document.getElementById('subtitle-timing').textContent =
+        `TEST_REPEAT=${m1.scenario.testRepeat}, потоков=${m1.scenario.maxParallelThreads}` +
         ` | Слои: миграции / сброс данных / бизнес-логика`;
     })();
 
