@@ -93,6 +93,84 @@ public class OrdersApiCrContainerTests : ContainerApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    /// <summary>
+    /// Создаёт заказ с тремя позициями через API — проверяет итоговую сумму и состав.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task MultiItemOrder_TotalAmountAndItemsCorrect(int _)
+    {
+        var p1 = await CreateProductAsync("Телефон", 30_000m);
+        var p2 = await CreateProductAsync("Чехол", 500m);
+        var p3 = await CreateProductAsync("Зарядка", 1_500m);
+
+        var createResp = await Client.PostAsJsonAsync("/api/orders", new CreateOrderRequest
+        {
+            Items = new List<OrderItemRequest>
+            {
+                new() { ProductId = p1.Id, Quantity = 1 },
+                new() { ProductId = p2.Id, Quantity = 2 },
+                new() { ProductId = p3.Id, Quantity = 1 },
+            }
+        });
+        Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+        var order = await createResp.Content.ReadFromJsonAsync<OrderDto>();
+        Assert.Equal(32_500m, order!.TotalAmount);
+        Assert.Equal(3, order.Items.Count);
+
+        var fetched = await (await Client.GetAsync($"/api/orders/{order.Id}")).Content.ReadFromJsonAsync<OrderDto>();
+        Assert.Equal(32_500m, fetched!.TotalAmount);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        var extraProduct = await CreateProductAsync("Доп товар", 100m);
+        for (var i = 0; i < 3; i++)
+        {
+            var extra = await Client.PostAsJsonAsync("/api/orders", new CreateOrderRequest
+            {
+                Items = new List<OrderItemRequest> { new() { ProductId = extraProduct.Id, Quantity = 1 } }
+            });
+            var extraOrder = await extra.Content.ReadFromJsonAsync<OrderDto>();
+            await Client.GetAsync($"/api/orders/{extraOrder!.Id}");
+        }
+        await Client.GetAsync("/api/orders");
+    }
+
+    /// <summary>
+    /// Создаёт заказ с тремя позициями, проводит полный lifecycle через API.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect(int _)
+    {
+        var p1 = await CreateProductAsync("Ноутбук", 50_000m);
+        var p2 = await CreateProductAsync("Мышь", 2_000m);
+        var p3 = await CreateProductAsync("Клавиатура", 3_000m);
+
+        var createResp = await Client.PostAsJsonAsync("/api/orders", new CreateOrderRequest
+        {
+            Items = new List<OrderItemRequest>
+            {
+                new() { ProductId = p1.Id, Quantity = 1 },
+                new() { ProductId = p2.Id, Quantity = 1 },
+                new() { ProductId = p3.Id, Quantity = 2 },
+            }
+        });
+        var order = await createResp.Content.ReadFromJsonAsync<OrderDto>();
+        Assert.Equal(58_000m, order!.TotalAmount);
+
+        Assert.Equal(HttpStatusCode.OK, (await Client.PostAsync($"/api/orders/{order.Id}/confirm", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Client.PostAsync($"/api/orders/{order.Id}/ship", null)).StatusCode);
+        var completedResp = await Client.PostAsync($"/api/orders/{order.Id}/complete", null);
+        Assert.Equal(HttpStatusCode.OK, completedResp.StatusCode);
+        var completed = await completedResp.Content.ReadFromJsonAsync<OrderDto>();
+        Assert.Equal(OrderStatus.Completed, completed!.Status);
+
+        var fetched = await (await Client.GetAsync($"/api/orders/{order.Id}")).Content.ReadFromJsonAsync<OrderDto>();
+        Assert.Equal(OrderStatus.Completed, fetched!.Status);
+        Assert.Equal(58_000m, fetched.TotalAmount);
+        Assert.Equal(3, fetched.Items.Count);
+    }
+
     // --- helpers ---
 
     /// <summary>
