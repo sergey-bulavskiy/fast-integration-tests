@@ -114,7 +114,7 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 
 ## Benchmark Runner
 
-Консольный инструмент для сравнительного бенчмарка трёх подходов по трём сценариям. Результат — `benchmark-results/report.html` с интерактивными Chart.js графиками.
+Консольный инструмент для сравнительного бенчмарка трёх подходов по трём сценариям. Результат — HTML отчёт с интерактивными Chart.js графиками (имя с таймстемпом, например `benchmark-results/report-20260425-143022.html`).
 
 ```bash
 # Запуск с дефолтными параметрами (Docker должен быть запущен, ~1–2 часа)
@@ -124,9 +124,8 @@ dotnet run --project tools/BenchmarkRunner
 dotnet run --project tools/BenchmarkRunner -- --threads 4 --repeat 10
 dotnet run --project tools/BenchmarkRunner -- -t 16 -r 50
 
-# Открыть отчёт после завершения
-start benchmark-results/report.html   # Windows
-open benchmark-results/report.html    # macOS
+# После завершения runner выводит точный путь к отчёту, например:
+# Open: benchmark-results/report-20260425-143022.html
 ```
 
 | Аргумент | По умолчанию | Применяется в |
@@ -160,8 +159,10 @@ open benchmark-results/report.html    # macOS
 
 ### Выходные файлы
 
-- `benchmark-results/report.html` — HTML отчёт с тремя линейными графиками (gitignored)
-- `benchmark-results/results.json` — сырые данные для воспроизведения (gitignored)
+- `benchmark-results/report-<timestamp>.html` — HTML отчёт: три линейных графика + stacked bar состава времени (gitignored)
+- `benchmark-results/results-<timestamp>.json` — сырые данные; перезаписывается после каждой точки данных (gitignored)
+
+Таймстемп формата `yyyyMMdd-HHmmss` фиксируется при старте `ReportGenerator` — оба файла одного прогона имеют одинаковый суффикс.
 
 ### Архитектура инструмента
 
