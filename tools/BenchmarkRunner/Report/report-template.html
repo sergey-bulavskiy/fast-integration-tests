@@ -63,21 +63,21 @@
     (function buildSubtitles() {
       const m1 = data.results.find(r => r.scenario.scenarioName === 'migrations');
       if (m1) document.getElementById('subtitle-migrations').textContent =
-        `TEST_REPEAT=${m1.scenario.testRepeat}, потоков=${m1.scenario.maxParallelThreads}` +
-        ` | Ось X: количество миграций в проекте`;
+        `${m1.scenario.testRepeat * BASE_TEST_COUNT} тестов, потоков=${m1.scenario.maxParallelThreads}` +
+        ` | Ось X: количество миграций в проекте`;
 
       const m2 = data.results.find(r => r.scenario.scenarioName === 'scale');
       if (m2) document.getElementById('subtitle-scale').textContent =
         `${m2.scenario.migrationCount} миграций, потоков=${m2.scenario.maxParallelThreads}` +
-        ` | Ось X: TEST_REPEAT (число повторов каждого теста)`;
+        ` | Ось X: количество тестов`;
 
       const m3 = data.results.find(r => r.scenario.scenarioName === 'parallelism');
       if (m3) document.getElementById('subtitle-parallelism').textContent =
-        `${m3.scenario.migrationCount} миграций, TEST_REPEAT=${m3.scenario.testRepeat}` +
-        ` | Ось X: MaxParallelThreads`;
+        `${m3.scenario.migrationCount} миграций, ${m3.scenario.testRepeat * BASE_TEST_COUNT} тестов` +
+        ` | Ось X: MaxParallelThreads`;
 
       if (m1) document.getElementById('subtitle-timing').textContent =
-        `TEST_REPEAT=${m1.scenario.testRepeat}, потоков=${m1.scenario.maxParallelThreads}` +
+        `${m1.scenario.testRepeat * BASE_TEST_COUNT} тестов, потоков=${m1.scenario.maxParallelThreads}` +
         ` | Слои: миграции / сброс данных / бизнес-логика`;
     })();
 
@@ -88,8 +88,9 @@
     };
 
     const APPROACHES = ['IntegreSQL', 'Respawn', 'Testcontainers'];
+    const BASE_TEST_COUNT = data.baseTestCount;
 
-    function buildChart(canvasId, scenarioName, xField, xLabel) {
+    function buildChart(canvasId, scenarioName, xField, xLabel, xTransform = x => x) {
       const rows    = data.results.filter(r => r.scenario.scenarioName === scenarioName);
       const xValues = [...new Set(rows.map(r => r.scenario[xField]))].sort((a, b) => a - b);
 
@@ -109,7 +110,7 @@
 
       new Chart(document.getElementById(canvasId), {
         type: 'line',
-        data: { labels: xValues, datasets },
+        data: { labels: xValues.map(xTransform), datasets },
         options: {
           responsive: true,
           interaction: { mode: 'index', intersect: false },
@@ -128,7 +129,7 @@
     }
 
     buildChart('chart-migrations', 'migrations', 'migrationCount',     'Количество миграций');
-    buildChart('chart-scale',      'scale',      'testRepeat',          'TEST_REPEAT');
+    buildChart('chart-scale',      'scale',      'testRepeat',          'Количество тестов', x => x * BASE_TEST_COUNT);
     buildChart('chart-parallelism','parallelism', 'maxParallelThreads', 'MaxParallelThreads');
 
     (function buildTimingChart() {
