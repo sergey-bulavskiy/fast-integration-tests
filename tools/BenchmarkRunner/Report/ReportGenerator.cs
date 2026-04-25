@@ -9,6 +9,7 @@ public class ReportGenerator
 {
     private readonly string _templatePath;
     private readonly string _outputDir;
+    private readonly string _timestamp;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -21,6 +22,7 @@ public class ReportGenerator
     {
         _templatePath = Path.Combine(AppContext.BaseDirectory, "Report", "report-template.html");
         _outputDir    = Path.Combine(repoRoot, "benchmark-results");
+        _timestamp    = DateTime.Now.ToString("yyyyMMdd-HHmmss");
     }
 
     /// <summary>Сохраняет промежуточный results.json после каждой точки данных.</summary>
@@ -28,20 +30,22 @@ public class ReportGenerator
     {
         Directory.CreateDirectory(_outputDir);
         var json = JsonSerializer.Serialize(report, JsonOptions);
-        File.WriteAllText(Path.Combine(_outputDir, "results.json"), json);
+        File.WriteAllText(Path.Combine(_outputDir, $"results-{_timestamp}.json"), json);
     }
 
     /// <summary>Сериализует отчёт в JSON, инлайнит в HTML шаблон, сохраняет оба файла.</summary>
-    public void Generate(BenchmarkReport report)
+    /// <returns>Абсолютный путь к сохранённому HTML файлу.</returns>
+    public string Generate(BenchmarkReport report)
     {
         SaveJson(report);
-        Console.WriteLine($"\n[REPORT] results.json saved");
+        Console.WriteLine($"\n[REPORT] results-{_timestamp}.json saved");
 
         var json     = JsonSerializer.Serialize(report, JsonOptions);
         var template = File.ReadAllText(_templatePath);
         var html     = template.Replace("/*INJECT_JSON*/", json);
-        var htmlPath = Path.Combine(_outputDir, "report.html");
+        var htmlPath = Path.Combine(_outputDir, $"report-{_timestamp}.html");
         File.WriteAllText(htmlPath, html);
-        Console.WriteLine($"[REPORT] report.html saved: {htmlPath}");
+        Console.WriteLine($"[REPORT] report-{_timestamp}.html saved: {htmlPath}");
+        return htmlPath;
     }
 }

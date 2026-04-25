@@ -111,11 +111,11 @@ catch (BenchmarkAbortedException)
 }
 
 // ─── Генерация отчёта ───────────────────────────────────────────────────────
-var report = new BenchmarkReport(DateTime.UtcNow, Environment.MachineName, BaseTestCount, results);
-reportGenerator.Generate(report);
+var report   = new BenchmarkReport(DateTime.UtcNow, Environment.MachineName, BaseTestCount, results);
+var htmlPath = reportGenerator.Generate(report);
 
 Console.WriteLine("\n=== Done! ===");
-Console.WriteLine("Open: benchmark-results/report.html");
+Console.WriteLine($"Open: {Path.GetRelativePath(repoRoot, htmlPath)}");
 
 // ─── Вспомогательные функции ────────────────────────────────────────────────
 BenchmarkResult RunOrAbort(BenchmarkScenario scenario)
