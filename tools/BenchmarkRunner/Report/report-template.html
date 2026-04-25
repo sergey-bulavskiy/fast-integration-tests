@@ -55,6 +55,7 @@
 
   <script>
     const data = BENCHMARK_DATA;
+    const BASE_TEST_COUNT = data.baseTestCount;
 
     document.getElementById('meta').textContent =
       'Сгенерировано: ' + new Date(data.generatedAt).toLocaleString('ru') +
@@ -88,7 +89,6 @@
     };
 
     const APPROACHES = ['IntegreSQL', 'Respawn', 'Testcontainers'];
-    const BASE_TEST_COUNT = data.baseTestCount;
 
     function buildChart(canvasId, scenarioName, xField, xLabel, xTransform = x => x) {
       const rows    = data.results.filter(r => r.scenario.scenarioName === scenarioName);
