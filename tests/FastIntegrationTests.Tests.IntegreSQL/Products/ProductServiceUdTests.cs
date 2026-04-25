@@ -77,4 +77,58 @@ public class ProductServiceUdTests : AppServiceTestBase
         // FK Restrict: нельзя удалить товар, на который ссылаются позиции заказа
         await Assert.ThrowsAsync<DbUpdateException>(() => Sut.DeleteAsync(product.Id));
     }
+
+    /// <summary>
+    /// Создаёт несколько товаров, читает через GetAll и GetById — проверяет согласованность данных.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    {
+        var a = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар А", Price = 100m });
+        var b = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар Б", Price = 200m });
+        var c = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар В", Price = 300m });
+
+        var all = await Sut.GetAllAsync();
+        Assert.Equal(3, all.Count);
+        Assert.Equal("Товар А", (await Sut.GetByIdAsync(a.Id)).Name);
+        Assert.Equal("Товар Б", (await Sut.GetByIdAsync(b.Id)).Name);
+        Assert.Equal("Товар В", (await Sut.GetByIdAsync(c.Id)).Name);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 4; i++)
+        {
+            var extra = await Sut.CreateAsync(new CreateProductRequest { Name = $"Доп {i}", Price = 500m + i * 50m });
+            await Sut.GetByIdAsync(extra.Id);
+        }
+        await Sut.GetAllAsync();
+    }
+
+    /// <summary>
+    /// Создаёт товар, обновляет поля, проверяет персистентность, удаляет — полный цикл записи.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    {
+        var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Монитор", Price = 20_000m });
+        var updated = await Sut.UpdateAsync(created.Id, new UpdateProductRequest { Name = "Монитор 4K", Description = "UHD", Price = 25_000m });
+        Assert.Equal("Монитор 4K", updated.Name);
+        Assert.Equal(25_000m, updated.Price);
+
+        var fetched = await Sut.GetByIdAsync(created.Id);
+        Assert.Equal("Монитор 4K", fetched.Name);
+
+        await Sut.DeleteAsync(created.Id);
+        await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(created.Id));
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 4; i++)
+        {
+            var extra = await Sut.CreateAsync(new CreateProductRequest { Name = $"Доп {i}", Price = 1_000m + i * 100m });
+            await Sut.UpdateAsync(extra.Id, new UpdateProductRequest { Name = $"Доп {i} v2", Price = 1_100m + i * 100m });
+            await Sut.GetByIdAsync(extra.Id);
+        }
+        await Sut.GetAllAsync();
+    }
 }
