@@ -9,6 +9,10 @@ int defaultThreads = 8;  // для сценариев, где потоки не 
 int defaultRepeat  = 12; // для сценариев, где повторы не варьируются (1 и 3)
 int timeoutMinutes = 50; // таймаут одного прогона dotnet test
 
+// хардкод — обновить при добавлении/удалении тест-методов в тест-проектах
+// проверить: dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --list-tests 2>&1 | grep "FastIntegrationTests.Tests.IntegreSQL" | wc -l
+const int BaseTestCount = 223;
+
 for (var i = 0; i < args.Length - 1; i++)
 {
     if (args[i] is "--threads" or "-t" && int.TryParse(args[i + 1], out var t) && t > 0)
@@ -107,7 +111,7 @@ catch (BenchmarkAbortedException)
 }
 
 // ─── Генерация отчёта ───────────────────────────────────────────────────────
-var report = new BenchmarkReport(DateTime.UtcNow, Environment.MachineName, results);
+var report = new BenchmarkReport(DateTime.UtcNow, Environment.MachineName, BaseTestCount, results);
 reportGenerator.Generate(report);
 
 Console.WriteLine("\n=== Done! ===");
@@ -120,7 +124,7 @@ BenchmarkResult RunOrAbort(BenchmarkScenario scenario)
     if (!result.Success)
         throw new BenchmarkAbortedException();
     results.Add(result);
-    reportGenerator.SaveJson(new BenchmarkReport(DateTime.UtcNow, Environment.MachineName, results));
+    reportGenerator.SaveJson(new BenchmarkReport(DateTime.UtcNow, Environment.MachineName, BaseTestCount, results));
     return result;
 }
 
