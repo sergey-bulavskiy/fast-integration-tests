@@ -9,6 +9,8 @@ global using FastIntegrationTests.Application.Services;
 global using FastIntegrationTests.Infrastructure.Data;
 global using FastIntegrationTests.Infrastructure.Repositories;
 global using FastIntegrationTests.Tests.Infrastructure.Base;
+global using FastIntegrationTests.Tests.Infrastructure.Factories;
+global using FastIntegrationTests.Tests.Infrastructure.Fixtures;
 global using FastIntegrationTests.Tests.Infrastructure.WebApp;
 global using Microsoft.EntityFrameworkCore;
 global using Xunit;
