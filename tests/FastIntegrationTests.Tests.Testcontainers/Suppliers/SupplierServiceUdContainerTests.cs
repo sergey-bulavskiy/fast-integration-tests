@@ -97,4 +97,64 @@ public class SupplierServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
 
         Assert.False(deactivated.IsActive);
     }
+
+    /// <summary>
+    /// Создаёт несколько поставщиков, проверяет GetAll и GetById каждого.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    {
+        var a = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Альфа", ContactEmail = "alpha@example.com", Country = "Россия" });
+        var b = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ИП Бета", ContactEmail = "beta@example.com", Country = "Беларусь" });
+        var c = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ЗАО Гамма", ContactEmail = "gamma@example.com", Country = "Казахстан" });
+
+        var all = await Sut.GetAllAsync();
+        Assert.Equal(3, all.Count);
+        Assert.Equal("ООО Альфа", (await Sut.GetByIdAsync(a.Id)).Name);
+        Assert.Equal("ИП Бета", (await Sut.GetByIdAsync(b.Id)).Name);
+        Assert.Equal("ЗАО Гамма", (await Sut.GetByIdAsync(c.Id)).Name);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 4; i++)
+        {
+            var extra = await Sut.CreateAsync(new CreateSupplierRequest { Name = $"Доп {i}", ContactEmail = $"extra{i}@example.com", Country = "РФ" });
+            await Sut.GetByIdAsync(extra.Id);
+        }
+        await Sut.GetAllAsync();
+    }
+
+    /// <summary>
+    /// Создаёт поставщика, обновляет поля, деактивирует, активирует — проверяет все переходы.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateUpdateDeactivateActivate_AllPersist(int _)
+    {
+        var created = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Старт", ContactEmail = "start@example.com", Country = "Россия" });
+        Assert.True(created.IsActive);
+
+        var updated = await Sut.UpdateAsync(created.Id, new UpdateSupplierRequest { Name = "ООО Финиш", ContactEmail = "start@example.com", Country = "Беларусь" });
+        Assert.Equal("ООО Финиш", updated.Name);
+        Assert.Equal("Беларусь", updated.Country);
+
+        var deactivated = await Sut.DeactivateAsync(created.Id);
+        Assert.False(deactivated.IsActive);
+
+        var activated = await Sut.ActivateAsync(created.Id);
+        Assert.True(activated.IsActive);
+
+        var fetched = await Sut.GetByIdAsync(created.Id);
+        Assert.Equal("ООО Финиш", fetched.Name);
+        Assert.True(fetched.IsActive);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 3; i++)
+        {
+            var extra = await Sut.CreateAsync(new CreateSupplierRequest { Name = $"Доп {i}", ContactEmail = $"pad{i}@example.com", Country = "РФ" });
+            await Sut.DeactivateAsync(extra.Id);
+            await Sut.GetByIdAsync(extra.Id);
+        }
+        await Sut.GetAllAsync();
+    }
 }
