@@ -47,6 +47,12 @@
     <canvas id="chart-parallelism"></canvas>
   </div>
 
+  <div class="card">
+    <h2>Состав времени — минимум и максимум миграций</h2>
+    <p class="subtitle" id="subtitle-timing"></p>
+    <canvas id="chart-timing"></canvas>
+  </div>
+
   <script>
     const data = BENCHMARK_DATA;
 
@@ -69,6 +75,11 @@
       if (m3) document.getElementById('subtitle-parallelism').textContent =
         `${m3.scenario.migrationCount} миграций, TEST_REPEAT=${m3.scenario.testRepeat}` +
         ` | Ось X: MaxParallelThreads`;
+
+      const m4 = data.results.find(r => r.scenario.scenarioName === 'migrations');
+      if (m4) document.getElementById('subtitle-timing').textContent =
+        `TEST_REPEAT=${m4.scenario.testRepeat}, потоков=${m4.scenario.maxParallelThreads}` +
+        ` | Слои: миграции / сброс данных / бизнес-логика`;
     })();
 
     const COLORS = {
@@ -120,6 +131,57 @@
     buildChart('chart-migrations', 'migrations', 'migrationCount',     'Количество миграций');
     buildChart('chart-scale',      'scale',      'testRepeat',          'TEST_REPEAT');
     buildChart('chart-parallelism','parallelism', 'maxParallelThreads', 'MaxParallelThreads');
+
+    (function buildTimingChart() {
+      const MIN_M = 17, MAX_M = 117;
+      const rows = data.results.filter(r =>
+        r.scenario.scenarioName === 'migrations' &&
+        (r.scenario.migrationCount === MIN_M || r.scenario.migrationCount === MAX_M)
+      );
+      if (!rows.length) return;
+
+      const labels = [];
+      const migData = [], resetData = [], bizData = [];
+      const bizColors = [];
+
+      for (const approach of APPROACHES) {
+        for (const count of [MIN_M, MAX_M]) {
+          const row = rows.find(r => r.scenario.approach === approach && r.scenario.migrationCount === count);
+          labels.push(approach + ' (' + count + ')');
+          const mig   = row ? +(row.migrationSeconds || 0).toFixed(2) : null;
+          const reset = row ? +(row.resetSeconds     || 0).toFixed(2) : null;
+          const biz   = row ? +Math.max(0, row.elapsedSeconds - (row.migrationSeconds || 0) - (row.resetSeconds || 0)).toFixed(2) : null;
+          migData.push(mig);
+          resetData.push(reset);
+          bizData.push(biz);
+          bizColors.push(COLORS[approach].border.replace('rgb', 'rgba').replace(')', ',0.7)'));
+        }
+      }
+
+      new Chart(document.getElementById('chart-timing'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Миграции',      data: migData,   backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { label: 'Сброс данных',  data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+            { label: 'Бизнес-логика', data: bizData,   backgroundColor: bizColors,               stack: 'a' },
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' с' } }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, title: { display: true, text: 'Время (секунды)' }, beginAtZero: true }
+          }
+        }
+      });
+    })();
   </script>
 </body>
 </html>
