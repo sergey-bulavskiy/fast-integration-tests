@@ -74,8 +74,11 @@ public static class IntegresSqlContainerManager
         // шаблон на каждую попытку, что дропает уже выданные клоны.
         // RemoveDatabase здесь правомерен: DropDatabaseOnRemove=true вызывает POST .../recreate,
         // который возвращает прогревочную БД в пул чисто, без гонок.
+        var migSw = System.Diagnostics.Stopwatch.StartNew();
         var warmupCs = await initializer.CreateDatabaseGetConnectionString(
             IntegresSqlDefaults.SeedingOptions);
+        migSw.Stop();
+        Console.WriteLine($"##BENCH[migration]={migSw.ElapsedMilliseconds}");
         await initializer.RemoveDatabase(warmupCs);
 
         return new IntegresSqlState(initializer);

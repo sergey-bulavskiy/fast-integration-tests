@@ -37,6 +37,9 @@ public abstract class ComponentTestBase : IAsyncLifetime
         if (_factory is not null) await _factory.DisposeAsync();
         await using var conn = new NpgsqlConnection(_connectionString);
         NpgsqlConnection.ClearPool(conn);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         await _initializer.RemoveDatabase(_connectionString);
+        sw.Stop();
+        Console.WriteLine($"##BENCH[reset]={sw.ElapsedMilliseconds}");
     }
 }
