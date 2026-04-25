@@ -5,7 +5,6 @@
     <Project Path="src/FastIntegrationTests.WebApi/FastIntegrationTests.WebApi.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/FastIntegrationTests.Tests/FastIntegrationTests.Tests.csproj" />
     <Project Path="tests/FastIntegrationTests.Tests.Shared/FastIntegrationTests.Tests.Shared.csproj" />
     <Project Path="tests/FastIntegrationTests.Tests.IntegreSQL/FastIntegrationTests.Tests.IntegreSQL.csproj" />
     <Project Path="tests/FastIntegrationTests.Tests.Respawn/FastIntegrationTests.Tests.Respawn.csproj" />
