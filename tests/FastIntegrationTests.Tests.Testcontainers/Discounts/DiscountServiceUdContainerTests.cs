@@ -104,4 +104,64 @@ public class DiscountServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
 
         Assert.False(deactivated.IsActive);
     }
+
+    /// <summary>
+    /// Создаёт несколько скидок, проверяет GetAll и GetById каждой.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    {
+        var a = await Sut.CreateAsync(new CreateDiscountRequest { Code = "SALE10", DiscountPercent = 10 });
+        var b = await Sut.CreateAsync(new CreateDiscountRequest { Code = "SALE20", DiscountPercent = 20 });
+        var c = await Sut.CreateAsync(new CreateDiscountRequest { Code = "SALE30", DiscountPercent = 30 });
+
+        var all = await Sut.GetAllAsync();
+        Assert.Equal(3, all.Count);
+        Assert.Equal("SALE10", (await Sut.GetByIdAsync(a.Id)).Code);
+        Assert.Equal("SALE20", (await Sut.GetByIdAsync(b.Id)).Code);
+        Assert.Equal("SALE30", (await Sut.GetByIdAsync(c.Id)).Code);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 4; i++)
+        {
+            var extra = await Sut.CreateAsync(new CreateDiscountRequest { Code = $"EXTRA{i:00}", DiscountPercent = 5 + i });
+            await Sut.GetByIdAsync(extra.Id);
+        }
+        await Sut.GetAllAsync();
+    }
+
+    /// <summary>
+    /// Создаёт скидку, активирует, деактивирует, обновляет — проверяет каждый шаг.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateActivateDeactivateUpdate_AllPersist(int _)
+    {
+        var created = await Sut.CreateAsync(new CreateDiscountRequest { Code = "START10", DiscountPercent = 10 });
+        Assert.False(created.IsActive);
+
+        var activated = await Sut.ActivateAsync(created.Id);
+        Assert.True(activated.IsActive);
+
+        var deactivated = await Sut.DeactivateAsync(created.Id);
+        Assert.False(deactivated.IsActive);
+
+        var updated = await Sut.UpdateAsync(created.Id, new UpdateDiscountRequest { Code = "FINISH25", DiscountPercent = 25 });
+        Assert.Equal("FINISH25", updated.Code);
+        Assert.Equal(25, updated.DiscountPercent);
+
+        var fetched = await Sut.GetByIdAsync(created.Id);
+        Assert.Equal("FINISH25", fetched.Code);
+        Assert.False(fetched.IsActive);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 3; i++)
+        {
+            var extra = await Sut.CreateAsync(new CreateDiscountRequest { Code = $"PAD{i:00}", DiscountPercent = 5 + i });
+            await Sut.ActivateAsync(extra.Id);
+            await Sut.GetByIdAsync(extra.Id);
+        }
+        await Sut.GetAllAsync();
+    }
 }

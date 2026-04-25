@@ -58,6 +58,63 @@ public class ReviewsApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    /// <summary>
+    /// Создаёт несколько отзывов через API, проверяет GetAll и GetById каждого.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    {
+        var a = await CreateReviewAsync("Отлично", 5);
+        var b = await CreateReviewAsync("Хорошо", 4);
+        var c = await CreateReviewAsync("Средне", 3);
+
+        var all = await Client.GetAsync("/api/reviews");
+        var list = await all.Content.ReadFromJsonAsync<List<ReviewDto>>();
+        Assert.Equal(3, list!.Count);
+
+        var fa = await (await Client.GetAsync($"/api/reviews/{a.Id}")).Content.ReadFromJsonAsync<ReviewDto>();
+        Assert.Equal("Отлично", fa!.Title);
+        Assert.Equal(ReviewStatus.Pending, fa.Status);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 4; i++)
+        {
+            var extra = await CreateReviewAsync($"Отзыв {i}", 3 + i % 3);
+            await Client.GetAsync($"/api/reviews/{extra.Id}");
+        }
+        await Client.GetAsync("/api/reviews");
+    }
+
+    /// <summary>
+    /// Создаёт два отзыва, один одобряет, второй отклоняет через API, первый удаляет.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect(int _)
+    {
+        var toApprove = await CreateReviewAsync("Одобрить", 5);
+        var toReject = await CreateReviewAsync("Отклонить", 1);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.PostAsync($"/api/reviews/{toApprove.Id}/approve", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.PostAsync($"/api/reviews/{toReject.Id}/reject", null)).StatusCode);
+
+        var approved = await (await Client.GetAsync($"/api/reviews/{toApprove.Id}")).Content.ReadFromJsonAsync<ReviewDto>();
+        Assert.Equal(ReviewStatus.Approved, approved!.Status);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/api/reviews/{toApprove.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client.GetAsync($"/api/reviews/{toApprove.Id}")).StatusCode);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 4; i++)
+        {
+            var extra = await CreateReviewAsync($"Доп {i}", 4);
+            await Client.PostAsync($"/api/reviews/{extra.Id}/approve", null);
+            await Client.GetAsync($"/api/reviews/{extra.Id}");
+        }
+        await Client.GetAsync("/api/reviews");
+    }
+
     // --- helpers ---
 
     /// <summary>

@@ -118,6 +118,63 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
+    /// <summary>
+    /// Создаёт несколько покупателей через API, проверяет GetAll и GetById каждого.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    {
+        var a = await CreateCustomerAsync("Иван", "ivan@example.com");
+        var b = await CreateCustomerAsync("Мария", "maria@example.com");
+        var c = await CreateCustomerAsync("Пётр", "peter@example.com");
+
+        var all = await Client.GetAsync("/api/customers");
+        var list = await all.Content.ReadFromJsonAsync<List<CustomerDto>>();
+        Assert.Equal(3, list!.Count);
+
+        var fa = await (await Client.GetAsync($"/api/customers/{a.Id}")).Content.ReadFromJsonAsync<CustomerDto>();
+        Assert.Equal("Иван", fa!.Name);
+        Assert.Equal(CustomerStatus.Active, fa.Status);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 4; i++)
+        {
+            var extra = await CreateCustomerAsync($"Доп {i}", $"extra{i}@example.com");
+            await Client.GetAsync($"/api/customers/{extra.Id}");
+        }
+        await Client.GetAsync("/api/customers");
+    }
+
+    /// <summary>
+    /// Создаёт покупателя, выполняет ban → activate → deactivate через API.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect(int _)
+    {
+        var created = await CreateCustomerAsync("Клиент", "client@example.com");
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.PostAsync($"/api/customers/{created.Id}/ban", null)).StatusCode);
+        var banned = await (await Client.GetAsync($"/api/customers/{created.Id}")).Content.ReadFromJsonAsync<CustomerDto>();
+        Assert.Equal(CustomerStatus.Banned, banned!.Status);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.PostAsync($"/api/customers/{created.Id}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.PostAsync($"/api/customers/{created.Id}/deactivate", null)).StatusCode);
+
+        var fetched = await (await Client.GetAsync($"/api/customers/{created.Id}")).Content.ReadFromJsonAsync<CustomerDto>();
+        Assert.Equal(CustomerStatus.Inactive, fetched!.Status);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 3; i++)
+        {
+            var extra = await CreateCustomerAsync($"Доп {i}", $"pad{i}@example.com");
+            await Client.PostAsync($"/api/customers/{extra.Id}/ban", null);
+            await Client.GetAsync($"/api/customers/{extra.Id}");
+        }
+        await Client.GetAsync("/api/customers");
+    }
+
     // --- helpers ---
 
     /// <summary>
