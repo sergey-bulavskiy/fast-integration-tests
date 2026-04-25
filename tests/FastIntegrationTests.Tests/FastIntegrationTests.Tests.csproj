@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\src\FastIntegrationTests.Application\FastIntegrationTests.Application.csproj" />
     <ProjectReference Include="..\..\src\FastIntegrationTests.Infrastructure\FastIntegrationTests.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\FastIntegrationTests.WebApi\FastIntegrationTests.WebApi.csproj" />
+    <ProjectReference Include="..\FastIntegrationTests.Tests.Shared\FastIntegrationTests.Tests.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

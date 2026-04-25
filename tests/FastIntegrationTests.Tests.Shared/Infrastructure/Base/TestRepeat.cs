@@ -4,7 +4,7 @@ namespace FastIntegrationTests.Tests.Infrastructure.Base;
 /// Источник данных для повторных прогонов тестов.
 /// Количество прогонов задаётся переменной окружения <c>TEST_REPEAT</c> (по умолчанию 1).
 /// </summary>
-internal static class TestRepeat
+public static class TestRepeat
 {
     /// <summary>
     /// Возвращает <see cref="TheoryData{T}"/> с числами от 1 до <c>TEST_REPEAT</c>.
