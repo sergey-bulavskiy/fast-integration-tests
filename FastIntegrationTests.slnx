@@ -7,5 +7,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/FastIntegrationTests.Tests/FastIntegrationTests.Tests.csproj" />
     <Project Path="tests/FastIntegrationTests.Tests.Shared/FastIntegrationTests.Tests.Shared.csproj" />
+    <Project Path="tests/FastIntegrationTests.Tests.IntegreSQL/FastIntegrationTests.Tests.IntegreSQL.csproj" />
   </Folder>
 </Solution>
