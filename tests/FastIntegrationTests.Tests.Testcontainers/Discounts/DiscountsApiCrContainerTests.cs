@@ -60,6 +60,67 @@ public class DiscountsApiCrContainerTests : ContainerApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    /// <summary>
+    /// Создаёт несколько скидок через API, проверяет GetAll и GetById каждой.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    {
+        var a = await CreateDiscountAsync("SALE10", 10);
+        var b = await CreateDiscountAsync("SALE20", 20);
+        var c = await CreateDiscountAsync("SALE30", 30);
+
+        var all = await Client.GetAsync("/api/discounts");
+        var list = await all.Content.ReadFromJsonAsync<List<DiscountDto>>();
+        Assert.Equal(3, list!.Count);
+
+        var fa = await (await Client.GetAsync($"/api/discounts/{a.Id}")).Content.ReadFromJsonAsync<DiscountDto>();
+        Assert.Equal("SALE10", fa!.Code);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 4; i++)
+        {
+            var extra = await CreateDiscountAsync($"EX{i:00}", 5 + i);
+            await Client.GetAsync($"/api/discounts/{extra.Id}");
+        }
+        await Client.GetAsync("/api/discounts");
+    }
+
+    /// <summary>
+    /// Создаёт скидку, активирует, деактивирует, обновляет через API.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
+    public async Task CreateActivateDeactivateUpdate_AllPersist(int _)
+    {
+        var created = await CreateDiscountAsync("START10", 10);
+        Assert.False(created.IsActive);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.PostAsync($"/api/discounts/{created.Id}/activate", null)).StatusCode);
+        var activated = await (await Client.GetAsync($"/api/discounts/{created.Id}")).Content.ReadFromJsonAsync<DiscountDto>();
+        Assert.True(activated!.IsActive);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.PostAsync($"/api/discounts/{created.Id}/deactivate", null)).StatusCode);
+
+        var putResp = await Client.PutAsJsonAsync($"/api/discounts/{created.Id}",
+            new UpdateDiscountRequest { Code = "FINISH25", DiscountPercent = 25 });
+        Assert.Equal(HttpStatusCode.OK, putResp.StatusCode);
+
+        var fetched = await (await Client.GetAsync($"/api/discounts/{created.Id}")).Content.ReadFromJsonAsync<DiscountDto>();
+        Assert.Equal("FINISH25", fetched!.Code);
+        Assert.False(fetched.IsActive);
+
+        // benchmark: искусственное увеличение продолжительности теста и объёма работы с БД
+        for (var i = 0; i < 3; i++)
+        {
+            var extra = await CreateDiscountAsync($"PAD{i:00}", 5 + i);
+            await Client.PostAsync($"/api/discounts/{extra.Id}/activate", null);
+            await Client.GetAsync($"/api/discounts/{extra.Id}");
+        }
+        await Client.GetAsync("/api/discounts");
+    }
+
     // --- helpers ---
 
     /// <summary>
