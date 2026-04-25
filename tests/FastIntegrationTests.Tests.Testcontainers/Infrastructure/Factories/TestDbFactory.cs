@@ -34,7 +34,10 @@ public sealed class TestDbFactory
         var context = new ShopDbContext(options);
         try
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             await context.Database.MigrateAsync(ct);
+            sw.Stop();
+            Console.WriteLine($"##BENCH[migration]={sw.ElapsedMilliseconds}");
         }
         catch
         {
