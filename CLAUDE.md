@@ -210,6 +210,12 @@ cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/Fast
 > Спроектировано и запланировано в `docs/superpowers/specs/2026-04-25-heavy-tests-design.md` и `docs/superpowers/plans/2026-04-25-heavy-tests.md`.
 > 168 новых тестов (84 класса × 2) добавляются в существующие классы; ~16–26 SQL-операций на тест с реалистичными цепочками create→update→verify→delete и накруткой БД.
 
+### ~~Декомпозиция времени: миграции / сброс / бизнес-логика~~ ✓ Реализовано
+
+> Спроектировано в `docs/superpowers/specs/2026-04-25-migration-timing-design.md`.
+> Stacked bar chart в отчёте показывает состав времени при 17 и 117 миграциях.
+> Инструментирование через `##BENCH[migration]=` и `##BENCH[reset]=` в stdout тест-инфраструктуры.
+
 ### Тесты, которые падают на InMemory и SQLite
 
 Отдельный класс тестов для демонстрации того, зачем вообще нужна реальная БД.
