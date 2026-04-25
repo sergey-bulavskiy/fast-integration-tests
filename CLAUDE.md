@@ -35,28 +35,28 @@ dotnet ef database update \
 # Запустить все тесты (требует запущенный Docker)
 dotnet test tests/FastIntegrationTests.Tests
 
-# Запустить один подход (bash / Git Bash)
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
+# Запустить один подход
+dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
+dotnet test tests/FastIntegrationTests.Tests.Respawn
+dotnet test tests/FastIntegrationTests.Tests.Testcontainers
 
 # С повторами — сравнение производительности (bash)
-TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
-TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
-TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
+TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
+TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests.Respawn
+TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests.Testcontainers
 
 # PowerShell
-$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
-$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
-$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
+$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
+$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests.Respawn
+$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests.Testcontainers
 
 # Переопределить количество потоков прямо из CLI
-TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL" -- xUnit.MaxParallelThreads=8
+TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests.IntegreSQL -- xUnit.MaxParallelThreads=8
 
 # Запустить тесты отдельного класса (примеры — суффиксы Cr/Ud, подход без суффикса/Respawn/Container)
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceCrTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiUdContainerTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~CategoryServiceUdRespawnTests"
+dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --filter "FullyQualifiedName~ProductServiceCrTests"
+dotnet test tests/FastIntegrationTests.Tests.Testcontainers --filter "FullyQualifiedName~OrdersApiUdContainerTests"
+dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedName~CategoryServiceUdRespawnTests"
 ```
 
 ### Как работают тесты

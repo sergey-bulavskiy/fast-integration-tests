@@ -7,8 +7,7 @@ $env:TEST_REPEAT = $Repeat
 $start = Get-Date
 
 Write-Host "Respawn | repeat=$Repeat | threads=$Threads"
-dotnet test tests/FastIntegrationTests.Tests `
-    --filter "FullyQualifiedName~Tests.Respawn" `
+dotnet test tests/FastIntegrationTests.Tests.Respawn `
     -- xUnit.MaxParallelThreads=$Threads
 
 $elapsed = (Get-Date) - $start

@@ -25,19 +25,29 @@ class TestRunner
     /// <summary>Устанавливает общее число прогонов для отображения прогресса.</summary>
     public void SetTotalRuns(int total) => _totalRuns = total;
 
-    /// <summary>Собирает тестовый проект. Вызывается перед первым Run и после изменения миграций.</summary>
+    /// <summary>Собирает все тестовые проекты. Вызывается перед первым Run и после изменения миграций.</summary>
     public void Build()
     {
-        Console.Write("\n[BUILD] tests/FastIntegrationTests.Tests ... ");
-        var (output, code) = RunCapture("dotnet", "build tests/FastIntegrationTests.Tests --nologo -v minimal");
-        if (code != 0)
+        var projects = new[]
         {
-            Console.WriteLine("FAIL");
-            var buildScenario = new BenchmarkScenario("build", "build", 0, 0, 0);
-            LogFailure(buildScenario, output);
-            throw new Exception($"Build failed (exit code {code})");
+            "tests/FastIntegrationTests.Tests.IntegreSQL",
+            "tests/FastIntegrationTests.Tests.Respawn",
+            "tests/FastIntegrationTests.Tests.Testcontainers",
+        };
+
+        foreach (var project in projects)
+        {
+            Console.Write($"\n[BUILD] {project} ... ");
+            var (output, code) = RunCapture("dotnet", $"build {project} --nologo -v minimal");
+            if (code != 0)
+            {
+                Console.WriteLine("FAIL");
+                var buildScenario = new BenchmarkScenario("build", "build", 0, 0, 0);
+                LogFailure(buildScenario, output);
+                throw new Exception($"Build failed: {project} (exit code {code})");
+            }
+            Console.WriteLine("OK");
         }
-        Console.WriteLine("OK");
     }
 
     /// <summary>Warmup-прогон — не учитывается в счётчике прогресса и не сохраняется в отчёт.</summary>
@@ -66,10 +76,8 @@ class TestRunner
 
     private (double Elapsed, bool Success, string Output) RunTest(BenchmarkScenario scenario)
     {
-        var filter = $"FullyQualifiedName~Tests.{scenario.Approach}";
         var args =
-            $"test tests/FastIntegrationTests.Tests" +
-            $" --filter \"{filter}\"" +
+            $"test tests/FastIntegrationTests.Tests.{scenario.Approach}" +
             $" --no-build" +
             $" -- xUnit.MaxParallelThreads={scenario.MaxParallelThreads}";
 
