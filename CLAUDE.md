@@ -33,7 +33,7 @@ dotnet ef database update \
 
 ```bash
 # Запустить все тесты (требует запущенный Docker)
-dotnet test tests/FastIntegrationTests.Tests
+dotnet test
 
 # Запустить один подход
 dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
@@ -179,7 +179,10 @@ tools/BenchmarkRunner/
 - **Application** — доменные сущности (`Entities/`), перечисления (`Enums/`), DTO (`DTOs/`), интерфейсы репозиториев и сервисов (`Interfaces/`), сервисы бизнес-логики (`Services/`), доменные исключения (`Exceptions/`). Не зависит от EF Core и конкретной СУБД.
 - **Infrastructure** — реализация репозиториев через EF Core (`Repositories/`), `ShopDbContext` с конфигурациями (`Data/`), extension-методы регистрации DI (`Extensions/ServiceCollectionExtensions.cs`).
 - **WebApi** — контроллеры (`Controllers/`), `Program.cs` с DI-конфигурацией, глобальная обработка ошибок (`Middleware/GlobalExceptionHandler.cs`).
-- **Tests** (`tests/FastIntegrationTests.Tests/`) — интеграционные тесты. Инфраструктура в `Infrastructure/` (фикстуры, фабрики, базовые классы для трёх подходов). Тест-классы сгруппированы по подходу: `IntegreSQL/`, `Respawn/`, `Testcontainers/`, каждый содержит `Products/` и `Orders/`. Внутри каждой сущности тесты разбиты на `*CrTests` (GetAll, GetById, Create) и `*UdTests` (Update, Delete, статусные переходы) — по 8 классов на подход.
+- **Tests.Shared** (`tests/FastIntegrationTests.Tests.Shared/`) — общая инфраструктура для всех трёх подходов: `TestRepeat` (управление числом повторов через `TEST_REPEAT`) и `TestWebApplicationFactory` (ASP.NET Core тест-сервер с подменой строки подключения).
+- **Tests.IntegreSQL** (`tests/FastIntegrationTests.Tests.IntegreSQL/`) — интеграционные тесты через IntegreSQL. Инфраструктура: `AppServiceTestBase`, `ComponentTestBase`, `IntegreSQL/` (менеджер контейнеров). Тест-классы в папках по сущностям: `Categories/`, `Customers/`, `Discounts/`, `Orders/`, `Products/`, `Reviews/`, `Suppliers/` — по 4 класса на сущность (`*CrTests`, `*UdTests` для сервисного и HTTP уровней).
+- **Tests.Respawn** (`tests/FastIntegrationTests.Tests.Respawn/`) — интеграционные тесты через Respawn. Инфраструктура: `RespawnServiceTestBase`, `RespawnApiTestBase`, `RespawnFixture`, `RespawnApiFixture`. Та же структура тест-классов.
+- **Tests.Testcontainers** (`tests/FastIntegrationTests.Tests.Testcontainers/`) — интеграционные тесты через Testcontainers. Инфраструктура: `ContainerServiceTestBase`, `ContainerApiTestBase`, `TestDbFactory`, `ContainerFixture`. Та же структура тест-классов.
 
 ## Локальная разработка
 

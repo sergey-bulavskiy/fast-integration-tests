@@ -143,18 +143,18 @@ New → Confirmed → Shipped → Completed
 Docker должен быть запущен. Контейнеры поднимаются автоматически через Testcontainers.
 
 ```bash
-# Все 495 тестов (три подхода вместе, TEST_REPEAT=1)
-dotnet test tests/FastIntegrationTests.Tests
+# Все тесты (три подхода вместе, TEST_REPEAT=1)
+dotnet test
 
 # Один подход
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.IntegreSQL"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Respawn"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~Tests.Testcontainers"
+dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
+dotnet test tests/FastIntegrationTests.Tests.Respawn
+dotnet test tests/FastIntegrationTests.Tests.Testcontainers
 
 # Отдельный тест-класс (примеры)
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~ProductServiceCrTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~OrdersApiUdTests"
-dotnet test tests/FastIntegrationTests.Tests --filter "FullyQualifiedName~CategoryServiceCrTests"
+dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --filter "FullyQualifiedName~ProductServiceCrTests"
+dotnet test tests/FastIntegrationTests.Tests.Testcontainers --filter "FullyQualifiedName~OrdersApiUdContainerTests"
+dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedName~CategoryServiceCrRespawnTests"
 ```
 
 ### PowerShell скрипты (с замером времени)
@@ -222,12 +222,11 @@ src/
 └── FastIntegrationTests.WebApi/         # ASP.NET Core: контроллеры, Program.cs
 
 tests/
-└── FastIntegrationTests.Tests/
-    ├── Infrastructure/                  # Фикстуры, базовые классы для трёх подходов
-    ├── IntegreSQL/                      # 165 тестов: Products/, Orders/, Categories/,
-    │                                   #             Customers/, Suppliers/, Reviews/, Discounts/
-    ├── Respawn/                         # 165 тестов: те же 7 папок
-    └── Testcontainers/                  # 165 тестов: те же 7 папок
+├── FastIntegrationTests.Tests.Shared/   # Общая инфраструктура: TestRepeat, TestWebApplicationFactory
+├── FastIntegrationTests.Tests.IntegreSQL/   # 165 тестов: Categories/, Customers/, Discounts/,
+│                                            #             Orders/, Products/, Reviews/, Suppliers/
+├── FastIntegrationTests.Tests.Respawn/      # 165 тестов: те же 7 папок
+└── FastIntegrationTests.Tests.Testcontainers/  # 165 тестов: те же 7 папок
 
 tools/
 └── BenchmarkRunner/                     # Консольный инструмент бенчмарка
