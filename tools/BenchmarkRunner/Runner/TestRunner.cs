@@ -54,11 +54,11 @@ class TestRunner
     public BenchmarkResult Warmup(BenchmarkScenario scenario)
     {
         Console.Write(FormatPrefix("[WRM]", scenario));
-        var (elapsed, success, output) = RunTest(scenario);
+        var (elapsed, success, output, migrationSeconds, resetSeconds) = RunTest(scenario);
         Console.WriteLine(FormatSuffix(elapsed, success));
         if (!success)
             LogFailure(scenario, output);
-        return new BenchmarkResult(scenario, elapsed, success);
+        return new BenchmarkResult(scenario, elapsed, migrationSeconds, resetSeconds, success);
     }
 
     /// <summary>Запускает dotnet test для одного сценария и возвращает результат с временем.</summary>
@@ -67,14 +67,14 @@ class TestRunner
         _currentRun++;
         var tag = _totalRuns > 0 ? $"[{_currentRun,2}/{_totalRuns}]" : "[   ]";
         Console.Write(FormatPrefix(tag, scenario));
-        var (elapsed, success, output) = RunTest(scenario);
+        var (elapsed, success, output, migrationSeconds, resetSeconds) = RunTest(scenario);
         Console.WriteLine(FormatSuffix(elapsed, success));
         if (!success)
             LogFailure(scenario, output);
-        return new BenchmarkResult(scenario, elapsed, success);
+        return new BenchmarkResult(scenario, elapsed, migrationSeconds, resetSeconds, success);
     }
 
-    private (double Elapsed, bool Success, string Output) RunTest(BenchmarkScenario scenario)
+    private (double Elapsed, bool Success, string Output, double MigrationSeconds, double ResetSeconds) RunTest(BenchmarkScenario scenario)
     {
         var args =
             $"test tests/FastIntegrationTests.Tests.{scenario.Approach}" +
@@ -85,7 +85,24 @@ class TestRunner
         var (output, code) = RunCapture("dotnet", args, ("TEST_REPEAT", scenario.TestRepeat.ToString()));
         sw.Stop();
 
-        return (sw.Elapsed.TotalSeconds, code == 0, output);
+        var (migrationMs, resetMs) = ParseBenchLines(output);
+        return (sw.Elapsed.TotalSeconds, code == 0, output, migrationMs / 1000.0, resetMs / 1000.0);
+    }
+
+    private static (long MigrationMs, long ResetMs) ParseBenchLines(string output)
+    {
+        long migrationMs = 0, resetMs = 0;
+        foreach (var line in output.Split('\n'))
+        {
+            var t = line.TrimEnd('\r');
+            if (t.StartsWith("##BENCH[migration]=") &&
+                long.TryParse(t["##BENCH[migration]=".Length..], out var m))
+                migrationMs += m;
+            else if (t.StartsWith("##BENCH[reset]=") &&
+                long.TryParse(t["##BENCH[reset]=".Length..], out var r))
+                resetMs += r;
+        }
+        return (migrationMs, resetMs);
     }
 
     private static string FormatPrefix(string tag, BenchmarkScenario s) =>
