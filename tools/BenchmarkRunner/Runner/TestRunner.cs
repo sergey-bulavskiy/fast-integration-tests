@@ -42,7 +42,7 @@ class TestRunner
             if (code != 0)
             {
                 Console.WriteLine("FAIL");
-                var buildScenario = new BenchmarkScenario("build", "build", 0, 0, 0);
+                var buildScenario = new BenchmarkScenario("build", "build", 0, 0);
                 LogFailure(buildScenario, output);
                 throw new Exception($"Build failed: {project} (exit code {code})");
             }
@@ -82,7 +82,7 @@ class TestRunner
             $" -- xUnit.MaxParallelThreads={scenario.MaxParallelThreads}";
 
         var sw = Stopwatch.StartNew();
-        var (output, code) = RunCapture("dotnet", args, ("TEST_REPEAT", scenario.TestRepeat.ToString()));
+        var (output, code) = RunCapture("dotnet", args);
         sw.Stop();
 
         var (migrationMs, resetMs) = ParseBenchLines(output);
@@ -106,7 +106,7 @@ class TestRunner
     }
 
     private static string FormatPrefix(string tag, BenchmarkScenario s) =>
-        $"{DateTime.Now:HH:mm} {tag} {s.Approach,-15} {s.ScenarioName,-12} m={s.MigrationCount,3} r={s.TestRepeat,2} t={s.MaxParallelThreads} ...";
+        $"{DateTime.Now:HH:mm} {tag} {s.Approach,-15} {s.ScenarioName,-12} m={s.MigrationCount,3} s={s.ClassScale,2} t={s.MaxParallelThreads} ...";
 
     private static string FormatSuffix(double elapsed, bool success) =>
         $" {elapsed,6:F1}s  {(success ? "✓" : "✗ FAIL")}";
@@ -116,13 +116,13 @@ class TestRunner
         Directory.CreateDirectory(Path.GetDirectoryName(_logPath)!);
         var header =
             $"=== FAILURE: {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===" + Environment.NewLine +
-            $"Scenario: {scenario.Approach} / {scenario.ScenarioName} / m={scenario.MigrationCount} r={scenario.TestRepeat} t={scenario.MaxParallelThreads}" + Environment.NewLine +
+            $"Scenario: {scenario.Approach} / {scenario.ScenarioName} / m={scenario.MigrationCount} s={scenario.ClassScale} t={scenario.MaxParallelThreads}" + Environment.NewLine +
             new string('─', 60) + Environment.NewLine;
         File.WriteAllText(_logPath, header + output.TrimEnd() + Environment.NewLine);
         Console.WriteLine($"  → see {_logPath}");
     }
 
-    private (string Output, int Code) RunCapture(string filename, string args, (string Key, string Value)? env = null)
+    private (string Output, int Code) RunCapture(string filename, string args)
     {
         var psi = new ProcessStartInfo(filename, args)
         {
@@ -131,8 +131,6 @@ class TestRunner
             RedirectStandardOutput = true,
             RedirectStandardError  = true,
         };
-        if (env is { } e)
-            psi.Environment[e.Key] = e.Value;
 
         var lines = new ConcurrentQueue<string>();
         using var process = Process.Start(psi)!;

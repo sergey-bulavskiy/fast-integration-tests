@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Customers;
+﻿namespace FastIntegrationTests.Tests.Respawn.Customers;
 
 /// <summary>
 /// Тесты HTTP-уровня: GetAll, GetById для CustomersController.
@@ -10,9 +10,8 @@ public class CustomersApiCrRespawnTests : RespawnApiTestBase
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
     public CustomersApiCrRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray(int _)
+    [Fact]
+    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray()
     {
         var response = await Client.GetAsync("/api/customers");
 
@@ -21,9 +20,8 @@ public class CustomersApiCrRespawnTests : RespawnApiTestBase
         Assert.Empty(items!);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenExist_Returns200WithCustomers(int _)
+    [Fact]
+    public async Task GetAll_WhenExist_Returns200WithCustomers()
     {
         await CreateCustomerAsync("Иван", "ivan@example.com");
         await CreateCustomerAsync("Мария", "maria@example.com");
@@ -35,9 +33,8 @@ public class CustomersApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal(2, items!.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenExists_Returns200WithCustomer(int _)
+    [Fact]
+    public async Task GetById_WhenExists_Returns200WithCustomer()
     {
         var created = await CreateCustomerAsync("Пётр", "petr@example.com");
 
@@ -49,9 +46,8 @@ public class CustomersApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal("Пётр", item.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task GetById_WhenNotFound_Returns404()
     {
         var response = await Client.GetAsync($"/api/customers/{Guid.NewGuid()}");
 
@@ -61,9 +57,8 @@ public class CustomersApiCrRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт несколько покупателей через API, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateCustomerAsync("Иван", "ivan@example.com");
         var b = await CreateCustomerAsync("Мария", "maria@example.com");
@@ -89,9 +84,8 @@ public class CustomersApiCrRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт покупателя, выполняет ban → activate → deactivate через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect(int _)
+    [Fact]
+    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect()
     {
         var created = await CreateCustomerAsync("Клиент", "client@example.com");
 

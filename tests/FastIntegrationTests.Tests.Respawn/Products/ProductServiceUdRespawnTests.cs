@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Products;
+﻿namespace FastIntegrationTests.Tests.Respawn.Products;
 
 /// <summary>
 /// Тесты сервисного уровня: Update, Delete для ProductService.
@@ -23,9 +23,8 @@ public class ProductServiceUdRespawnTests : RespawnServiceTestBase
         _orders = new OrderService(orderRepo, productRepo);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task UpdateAsync_UpdatesProductFieldsInDatabase(int _)
+    [Fact]
+    public async Task UpdateAsync_UpdatesProductFieldsInDatabase()
     {
         var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Старое название", Price = 1_000m });
         var updateRequest = new UpdateProductRequest { Name = "Новое название", Description = "Новое описание", Price = 1_500m };
@@ -41,18 +40,16 @@ public class ProductServiceUdRespawnTests : RespawnServiceTestBase
         Assert.Equal(1_500m, fetched.Price);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task UpdateAsync_WhenProductNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task UpdateAsync_WhenProductNotFound_ThrowsNotFoundException()
     {
         var request = new UpdateProductRequest { Name = "Название", Description = string.Empty, Price = 100m };
 
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.UpdateAsync(999, request));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeleteAsync_RemovesProductFromDatabase(int _)
+    [Fact]
+    public async Task DeleteAsync_RemovesProductFromDatabase()
     {
         var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Временный товар", Price = 500m });
 
@@ -61,16 +58,14 @@ public class ProductServiceUdRespawnTests : RespawnServiceTestBase
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(created.Id));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeleteAsync_WhenProductNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task DeleteAsync_WhenProductNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.DeleteAsync(999));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeleteAsync_WhenProductHasOrderItems_ThrowsDbUpdateException(int _)
+    [Fact]
+    public async Task DeleteAsync_WhenProductHasOrderItems_ThrowsDbUpdateException()
     {
         var product = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар в заказе", Price = 1_000m });
         await _orders.CreateAsync(new CreateOrderRequest
@@ -85,9 +80,8 @@ public class ProductServiceUdRespawnTests : RespawnServiceTestBase
     /// <summary>
     /// Создаёт несколько товаров, читает через GetAll и GetById — проверяет согласованность данных.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар А", Price = 100m });
         var b = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар Б", Price = 200m });
@@ -111,9 +105,8 @@ public class ProductServiceUdRespawnTests : RespawnServiceTestBase
     /// <summary>
     /// Создаёт товар, обновляет поля, проверяет персистентность, удаляет — полный цикл записи.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist()
     {
         var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Монитор", Price = 20_000m });
         var updated = await Sut.UpdateAsync(created.Id, new UpdateProductRequest { Name = "Монитор 4K", Description = "UHD", Price = 25_000m });

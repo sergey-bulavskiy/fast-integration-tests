@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Orders;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Orders;
 
 /// <summary>
 /// Тесты сервисного уровня: GetAll, GetById, Create для OrderService.
@@ -18,18 +18,16 @@ public class OrderServiceCrTests : AppServiceTestBase
         Sut = new OrderService(new OrderRepository(Context), productRepo);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenNoOrders_ReturnsEmptyList(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenNoOrders_ReturnsEmptyList()
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenOrdersExist_ReturnsAllOrders(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenOrdersExist_ReturnsAllOrders()
     {
         var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
         await Sut.CreateAsync(new CreateOrderRequest
@@ -46,9 +44,8 @@ public class OrderServiceCrTests : AppServiceTestBase
         Assert.Equal(2, result.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenOrderExists_ReturnsOrderWithItems(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenOrderExists_ReturnsOrderWithItems()
     {
         var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 500m });
         var created = await Sut.CreateAsync(new CreateOrderRequest
@@ -64,16 +61,14 @@ public class OrderServiceCrTests : AppServiceTestBase
         Assert.Equal(3, result.Items[0].Quantity);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenOrderNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenOrderNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(999));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_CalculatesTotalAmountCorrectly(int _)
+    [Fact]
+    public async Task CreateAsync_CalculatesTotalAmountCorrectly()
     {
         var product1 = await _products.CreateAsync(new CreateProductRequest { Name = "Товар 1", Price = 100m });
         var product2 = await _products.CreateAsync(new CreateProductRequest { Name = "Товар 2", Price = 200m });
@@ -90,9 +85,8 @@ public class OrderServiceCrTests : AppServiceTestBase
         Assert.Equal(800m, order.TotalAmount); // 200 + 600
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_SetsUnitPriceFromCurrentProductPrice(int _)
+    [Fact]
+    public async Task CreateAsync_SetsUnitPriceFromCurrentProductPrice()
     {
         var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 999m });
 
@@ -104,9 +98,8 @@ public class OrderServiceCrTests : AppServiceTestBase
         Assert.Equal(999m, order.Items[0].UnitPrice);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_WhenProductNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task CreateAsync_WhenProductNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.CreateAsync(new CreateOrderRequest
         {
@@ -114,9 +107,8 @@ public class OrderServiceCrTests : AppServiceTestBase
         }));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_NewOrderHasStatusNew(int _)
+    [Fact]
+    public async Task CreateAsync_NewOrderHasStatusNew()
     {
         var product = await _products.CreateAsync(new CreateProductRequest { Name = "Товар", Price = 100m });
 
@@ -131,9 +123,8 @@ public class OrderServiceCrTests : AppServiceTestBase
     /// <summary>
     /// Создаёт заказ с тремя позициями разных товаров — проверяет итоговую сумму и состав.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task MultiItemOrder_TotalAmountAndItemsCorrect(int _)
+    [Fact]
+    public async Task MultiItemOrder_TotalAmountAndItemsCorrect()
     {
         var p1 = await _products.CreateAsync(new CreateProductRequest { Name = "Телефон", Price = 30_000m });
         var p2 = await _products.CreateAsync(new CreateProductRequest { Name = "Чехол", Price = 500m });
@@ -172,9 +163,8 @@ public class OrderServiceCrTests : AppServiceTestBase
     /// <summary>
     /// Создаёт заказ с тремя позициями, проводит полный lifecycle, проверяет итоговую сумму и статус.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect(int _)
+    [Fact]
+    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect()
     {
         var p1 = await _products.CreateAsync(new CreateProductRequest { Name = "Ноутбук", Price = 50_000m });
         var p2 = await _products.CreateAsync(new CreateProductRequest { Name = "Мышь", Price = 2_000m });

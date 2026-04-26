@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Customers;
+﻿namespace FastIntegrationTests.Tests.Respawn.Customers;
 
 /// <summary>
 /// Тесты HTTP-уровня: Create, Update, Delete, статусные переходы для CustomersController.
@@ -10,9 +10,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
     public CustomersApiUdRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_ValidRequest_Returns201WithLocationHeader(int _)
+    [Fact]
+    public async Task Create_ValidRequest_Returns201WithLocationHeader()
     {
         var request = new CreateCustomerRequest { Name = "Иван", Email = "ivan@example.com" };
 
@@ -25,9 +24,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal("Иван", item.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_WhenDuplicateEmail_Returns409(int _)
+    [Fact]
+    public async Task Create_WhenDuplicateEmail_Returns409()
     {
         await Client.PostAsJsonAsync("/api/customers", new CreateCustomerRequest { Name = "Иван", Email = "dup@example.com" });
 
@@ -36,9 +34,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenExists_Returns200WithUpdatedFields(int _)
+    [Fact]
+    public async Task Update_WhenExists_Returns200WithUpdatedFields()
     {
         var created = await CreateCustomerAsync("Старый", "old@example.com");
 
@@ -51,9 +48,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal("new@example.com", updated.Email);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task Update_WhenNotFound_Returns404()
     {
         var response = await Client.PutAsJsonAsync($"/api/customers/{Guid.NewGuid()}",
             new UpdateCustomerRequest { Name = "Любой", Email = "any@example.com" });
@@ -61,9 +57,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Delete_WhenExists_Returns204()
     {
         var created = await CreateCustomerAsync("Удаляемый", "del@example.com");
 
@@ -72,9 +67,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Ban_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Ban_WhenExists_Returns204()
     {
         var created = await CreateCustomerAsync("Нарушитель", "ban@example.com");
 
@@ -83,9 +77,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Ban_WhenAlreadyBanned_Returns422(int _)
+    [Fact]
+    public async Task Ban_WhenAlreadyBanned_Returns422()
     {
         var created = await CreateCustomerAsync("Забаненный", "banned@example.com");
         await Client.PostAsync($"/api/customers/{created.Id}/ban", null);
@@ -95,9 +88,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Activate_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Activate_WhenExists_Returns204()
     {
         var created = await CreateCustomerAsync("Неактивный", "inactive@example.com");
         await Client.PostAsync($"/api/customers/{created.Id}/deactivate", null);
@@ -107,9 +99,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Deactivate_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Deactivate_WhenExists_Returns204()
     {
         var created = await CreateCustomerAsync("Активный", "active@example.com");
 
@@ -121,9 +112,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт несколько покупателей через API, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateCustomerAsync("Иван", "ivan@example.com");
         var b = await CreateCustomerAsync("Мария", "maria@example.com");
@@ -149,9 +139,8 @@ public class CustomersApiUdRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт покупателя, выполняет ban → activate → deactivate через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect(int _)
+    [Fact]
+    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect()
     {
         var created = await CreateCustomerAsync("Клиент", "client@example.com");
 

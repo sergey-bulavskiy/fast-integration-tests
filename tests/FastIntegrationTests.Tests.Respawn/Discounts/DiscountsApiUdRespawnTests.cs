@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Discounts;
+﻿namespace FastIntegrationTests.Tests.Respawn.Discounts;
 
 /// <summary>
 /// Тесты HTTP-уровня: Create, Update, Delete, Activate, Deactivate для DiscountsController.
@@ -10,9 +10,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
     public DiscountsApiUdRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_ValidRequest_Returns201WithLocationHeader(int _)
+    [Fact]
+    public async Task Create_ValidRequest_Returns201WithLocationHeader()
     {
         var request = new CreateDiscountRequest { Code = "SALE10", DiscountPercent = 10 };
 
@@ -25,9 +24,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal("SALE10", item.Code);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_WhenInvalidPercent_Returns422(int _)
+    [Fact]
+    public async Task Create_WhenInvalidPercent_Returns422()
     {
         var response = await Client.PostAsJsonAsync("/api/discounts",
             new CreateDiscountRequest { Code = "INVALID", DiscountPercent = 0 });
@@ -35,9 +33,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_WhenDuplicateCode_Returns409(int _)
+    [Fact]
+    public async Task Create_WhenDuplicateCode_Returns409()
     {
         await Client.PostAsJsonAsync("/api/discounts", new CreateDiscountRequest { Code = "DUP", DiscountPercent = 10 });
 
@@ -46,9 +43,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenExists_Returns200WithUpdatedFields(int _)
+    [Fact]
+    public async Task Update_WhenExists_Returns200WithUpdatedFields()
     {
         var created = await CreateDiscountAsync("OLD10", 10);
 
@@ -61,9 +57,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(25, updated.DiscountPercent);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task Update_WhenNotFound_Returns404()
     {
         var response = await Client.PutAsJsonAsync($"/api/discounts/{Guid.NewGuid()}",
             new UpdateDiscountRequest { Code = "ANY", DiscountPercent = 10 });
@@ -71,9 +66,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Delete_WhenExists_Returns204()
     {
         var created = await CreateDiscountAsync("DEL10", 10);
 
@@ -82,9 +76,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Activate_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Activate_WhenExists_Returns204()
     {
         var created = await CreateDiscountAsync("ACT10", 10);
 
@@ -93,9 +86,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Deactivate_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Deactivate_WhenExists_Returns204()
     {
         var created = await CreateDiscountAsync("DEACT10", 10);
         await Client.PostAsync($"/api/discounts/{created.Id}/activate", null);
@@ -108,9 +100,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт несколько скидок через API, проверяет GetAll и GetById каждой.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateDiscountAsync("SALE10", 10);
         var b = await CreateDiscountAsync("SALE20", 20);
@@ -135,9 +126,8 @@ public class DiscountsApiUdRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт скидку, активирует, деактивирует, обновляет через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateActivateDeactivateUpdate_AllPersist(int _)
+    [Fact]
+    public async Task CreateActivateDeactivateUpdate_AllPersist()
     {
         var created = await CreateDiscountAsync("START10", 10);
         Assert.False(created.IsActive);

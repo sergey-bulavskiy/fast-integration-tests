@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Categories;
+﻿namespace FastIntegrationTests.Tests.Respawn.Categories;
 
 /// <summary>
 /// Тесты HTTP-уровня: Create, Update, Delete для CategoriesController.
@@ -10,9 +10,8 @@ public class CategoriesApiUdRespawnTests : RespawnApiTestBase
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
     public CategoriesApiUdRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_ValidRequest_Returns201WithLocationHeader(int _)
+    [Fact]
+    public async Task Create_ValidRequest_Returns201WithLocationHeader()
     {
         var request = new CreateCategoryRequest { Name = "Электроника", Description = "Гаджеты" };
 
@@ -25,9 +24,8 @@ public class CategoriesApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal("Электроника", item.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_WhenDuplicateName_Returns409(int _)
+    [Fact]
+    public async Task Create_WhenDuplicateName_Returns409()
     {
         await Client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Дубль" });
 
@@ -36,9 +34,8 @@ public class CategoriesApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenExists_Returns200WithUpdatedFields(int _)
+    [Fact]
+    public async Task Update_WhenExists_Returns200WithUpdatedFields()
     {
         var created = await CreateCategoryAsync("Старая");
 
@@ -51,9 +48,8 @@ public class CategoriesApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal("Обновлено", updated.Description);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task Update_WhenNotFound_Returns404()
     {
         var response = await Client.PutAsJsonAsync($"/api/categories/{Guid.NewGuid()}",
             new UpdateCategoryRequest { Name = "Любая" });
@@ -61,9 +57,8 @@ public class CategoriesApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Delete_WhenExists_Returns204()
     {
         var created = await CreateCategoryAsync("Удаляемая");
 
@@ -75,9 +70,8 @@ public class CategoriesApiUdRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт несколько категорий через API, проверяет GetAll и GetById каждой.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateCategoryAsync("Электроника");
         var b = await CreateCategoryAsync("Одежда");
@@ -106,9 +100,8 @@ public class CategoriesApiUdRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт категорию, обновляет через PUT, проверяет GET, удаляет — полный HTTP-цикл.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist()
     {
         var created = await CreateCategoryAsync("Спорт");
 

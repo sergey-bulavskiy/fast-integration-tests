@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Testcontainers.Suppliers;
+﻿namespace FastIntegrationTests.Tests.Testcontainers.Suppliers;
 
 /// <summary>
 /// Тесты сервисного уровня: Create (ошибки), Update, Delete, Activate, Deactivate для SupplierService.
@@ -30,9 +30,8 @@ public class SupplierServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
         await _context.DisposeAsync();
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_WhenDuplicateEmail_ThrowsDuplicateValueException(int _)
+    [Fact]
+    public async Task CreateAsync_WhenDuplicateEmail_ThrowsDuplicateValueException()
     {
         await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Альфа", ContactEmail = "dup@vendor.com", Country = "Россия" });
 
@@ -40,9 +39,8 @@ public class SupplierServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
             () => Sut.CreateAsync(new CreateSupplierRequest { Name = "Другой", ContactEmail = "dup@vendor.com", Country = "Беларусь" }));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task UpdateAsync_UpdatesFields(int _)
+    [Fact]
+    public async Task UpdateAsync_UpdatesFields()
     {
         var created = await Sut.CreateAsync(new CreateSupplierRequest { Name = "Старое", ContactEmail = "old@vendor.com", Country = "Россия" });
 
@@ -56,17 +54,15 @@ public class SupplierServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
         Assert.Equal("Новое", fetched.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task UpdateAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task UpdateAsync_WhenNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(
             () => Sut.UpdateAsync(Guid.NewGuid(), new UpdateSupplierRequest { Name = "Любое", ContactEmail = "any@vendor.com", Country = "Россия" }));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeleteAsync_RemovesSupplier(int _)
+    [Fact]
+    public async Task DeleteAsync_RemovesSupplier()
     {
         var created = await Sut.CreateAsync(new CreateSupplierRequest { Name = "Удаляемый", ContactEmail = "del@vendor.com", Country = "Россия" });
 
@@ -75,9 +71,8 @@ public class SupplierServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(created.Id));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task ActivateAsync_ActivatesSupplier(int _)
+    [Fact]
+    public async Task ActivateAsync_ActivatesSupplier()
     {
         var created = await Sut.CreateAsync(new CreateSupplierRequest { Name = "Неактивный", ContactEmail = "inactive@vendor.com", Country = "Россия" });
         await Sut.DeactivateAsync(created.Id);
@@ -87,9 +82,8 @@ public class SupplierServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
         Assert.True(activated.IsActive);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeactivateAsync_DeactivatesSupplier(int _)
+    [Fact]
+    public async Task DeactivateAsync_DeactivatesSupplier()
     {
         var created = await Sut.CreateAsync(new CreateSupplierRequest { Name = "Активный", ContactEmail = "active@vendor.com", Country = "Россия" });
 
@@ -101,9 +95,8 @@ public class SupplierServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
     /// <summary>
     /// Создаёт несколько поставщиков, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Альфа", ContactEmail = "alpha@example.com", Country = "Россия" });
         var b = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ИП Бета", ContactEmail = "beta@example.com", Country = "Беларусь" });
@@ -127,9 +120,8 @@ public class SupplierServiceUdContainerTests : IAsyncLifetime, IClassFixture<Con
     /// <summary>
     /// Создаёт поставщика, обновляет поля, деактивирует, активирует — проверяет все переходы.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDeactivateActivate_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDeactivateActivate_AllPersist()
     {
         var created = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Старт", ContactEmail = "start@example.com", Country = "Россия" });
         Assert.True(created.IsActive);

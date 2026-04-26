@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Testcontainers.Discounts;
+﻿namespace FastIntegrationTests.Tests.Testcontainers.Discounts;
 
 /// <summary>
 /// Тесты сервисного уровня: GetAll, GetById, Create для DiscountService.
@@ -30,18 +30,16 @@ public class DiscountServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
         await _context.DisposeAsync();
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenNoDiscounts_ReturnsEmptyList(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenNoDiscounts_ReturnsEmptyList()
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenDiscountsExist_ReturnsAllDiscounts(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenDiscountsExist_ReturnsAllDiscounts()
     {
         await Sut.CreateAsync(new CreateDiscountRequest { Code = "SALE10", DiscountPercent = 10 });
         await Sut.CreateAsync(new CreateDiscountRequest { Code = "SALE20", DiscountPercent = 20 });
@@ -51,9 +49,8 @@ public class DiscountServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
         Assert.Equal(2, result.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenExists_ReturnsDiscount(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenExists_ReturnsDiscount()
     {
         var created = await Sut.CreateAsync(new CreateDiscountRequest { Code = "PROMO15", DiscountPercent = 15 });
 
@@ -65,16 +62,14 @@ public class DiscountServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
         Assert.False(result.IsActive);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(Guid.NewGuid()));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_PersistsAndReturns(int _)
+    [Fact]
+    public async Task CreateAsync_PersistsAndReturns()
     {
         var result = await Sut.CreateAsync(new CreateDiscountRequest { Code = "WELCOME5", DiscountPercent = 5 });
 
@@ -88,9 +83,8 @@ public class DiscountServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
     /// <summary>
     /// Создаёт несколько скидок, проверяет GetAll и GetById каждой.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateDiscountRequest { Code = "SALE10", DiscountPercent = 10 });
         var b = await Sut.CreateAsync(new CreateDiscountRequest { Code = "SALE20", DiscountPercent = 20 });
@@ -114,9 +108,8 @@ public class DiscountServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
     /// <summary>
     /// Создаёт скидку, активирует, деактивирует, обновляет — проверяет каждый шаг.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateActivateDeactivateUpdate_AllPersist(int _)
+    [Fact]
+    public async Task CreateActivateDeactivateUpdate_AllPersist()
     {
         var created = await Sut.CreateAsync(new CreateDiscountRequest { Code = "START10", DiscountPercent = 10 });
         Assert.False(created.IsActive);

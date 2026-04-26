@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Customers;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Customers;
 
 /// <summary>
 /// Тесты сервисного уровня: Create (ошибки), Update, Delete, статусные переходы для CustomerService.
@@ -15,9 +15,8 @@ public class CustomerServiceUdTests : AppServiceTestBase
         Sut = new CustomerService(new CustomerRepository(Context));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_WhenDuplicateEmail_ThrowsDuplicateValueException(int _)
+    [Fact]
+    public async Task CreateAsync_WhenDuplicateEmail_ThrowsDuplicateValueException()
     {
         await Sut.CreateAsync(new CreateCustomerRequest { Name = "Иван", Email = "dup@example.com" });
 
@@ -25,9 +24,8 @@ public class CustomerServiceUdTests : AppServiceTestBase
             () => Sut.CreateAsync(new CreateCustomerRequest { Name = "Другой", Email = "dup@example.com" }));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task UpdateAsync_UpdatesFields(int _)
+    [Fact]
+    public async Task UpdateAsync_UpdatesFields()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Старое", Email = "old@example.com" });
 
@@ -41,17 +39,15 @@ public class CustomerServiceUdTests : AppServiceTestBase
         Assert.Equal("Новое", fetched.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task UpdateAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task UpdateAsync_WhenNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(
             () => Sut.UpdateAsync(Guid.NewGuid(), new UpdateCustomerRequest { Name = "Любое", Email = "any@example.com" }));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeleteAsync_RemovesCustomer(int _)
+    [Fact]
+    public async Task DeleteAsync_RemovesCustomer()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Удаляемый", Email = "del@example.com" });
 
@@ -60,9 +56,8 @@ public class CustomerServiceUdTests : AppServiceTestBase
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(created.Id));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task BanAsync_BansCustomer(int _)
+    [Fact]
+    public async Task BanAsync_BansCustomer()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Нарушитель", Email = "ban@example.com" });
 
@@ -71,9 +66,8 @@ public class CustomerServiceUdTests : AppServiceTestBase
         Assert.Equal(CustomerStatus.Banned, banned.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task BanAsync_WhenAlreadyBanned_ThrowsInvalidStatusTransitionException(int _)
+    [Fact]
+    public async Task BanAsync_WhenAlreadyBanned_ThrowsInvalidStatusTransitionException()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Уже забанен", Email = "banned@example.com" });
         await Sut.BanAsync(created.Id);
@@ -81,9 +75,8 @@ public class CustomerServiceUdTests : AppServiceTestBase
         await Assert.ThrowsAsync<InvalidStatusTransitionException>(() => Sut.BanAsync(created.Id));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task ActivateAsync_ActivatesCustomer(int _)
+    [Fact]
+    public async Task ActivateAsync_ActivatesCustomer()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Неактивный", Email = "inactive@example.com" });
         await Sut.DeactivateAsync(created.Id);
@@ -93,9 +86,8 @@ public class CustomerServiceUdTests : AppServiceTestBase
         Assert.Equal(CustomerStatus.Active, activated.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeactivateAsync_DeactivatesCustomer(int _)
+    [Fact]
+    public async Task DeactivateAsync_DeactivatesCustomer()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Активный", Email = "active@example.com" });
 
@@ -107,9 +99,8 @@ public class CustomerServiceUdTests : AppServiceTestBase
     /// <summary>
     /// Создаёт несколько покупателей, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Иван", Email = "ivan@example.com" });
         var b = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Мария", Email = "maria@example.com" });
@@ -133,9 +124,8 @@ public class CustomerServiceUdTests : AppServiceTestBase
     /// <summary>
     /// Создаёт покупателя, выполняет Ban → Activate → Deactivate, проверяет статус после каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect(int _)
+    [Fact]
+    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Клиент", Email = "client@example.com" });
         Assert.Equal(CustomerStatus.Active, created.Status);

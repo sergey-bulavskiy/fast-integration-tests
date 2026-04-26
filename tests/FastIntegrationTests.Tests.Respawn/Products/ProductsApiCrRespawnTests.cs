@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Products;
+﻿namespace FastIntegrationTests.Tests.Respawn.Products;
 
 /// <summary>
 /// Тесты HTTP-уровня: GetAll, GetById, Create для ProductsController.
@@ -10,9 +10,8 @@ public class ProductsApiCrRespawnTests : RespawnApiTestBase
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
     public ProductsApiCrRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenNoProducts_Returns200WithEmptyArray(int _)
+    [Fact]
+    public async Task GetAll_WhenNoProducts_Returns200WithEmptyArray()
     {
         var response = await Client.GetAsync("/api/products");
 
@@ -21,9 +20,8 @@ public class ProductsApiCrRespawnTests : RespawnApiTestBase
         Assert.Empty(products!);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenProductsExist_Returns200WithProducts(int _)
+    [Fact]
+    public async Task GetAll_WhenProductsExist_Returns200WithProducts()
     {
         await CreateProductAsync("Товар 1", 100m);
         await CreateProductAsync("Товар 2", 200m);
@@ -35,9 +33,8 @@ public class ProductsApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal(2, products!.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenProductExists_Returns200WithProduct(int _)
+    [Fact]
+    public async Task GetById_WhenProductExists_Returns200WithProduct()
     {
         var created = await CreateProductAsync("Ноутбук", 50_000m);
 
@@ -49,18 +46,16 @@ public class ProductsApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal("Ноутбук", product.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenProductNotFound_Returns404(int _)
+    [Fact]
+    public async Task GetById_WhenProductNotFound_Returns404()
     {
         var response = await Client.GetAsync("/api/products/999");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_ValidRequest_Returns201WithLocationHeaderAndId(int _)
+    [Fact]
+    public async Task Create_ValidRequest_Returns201WithLocationHeaderAndId()
     {
         var request = new CreateProductRequest { Name = "Монитор", Description = "4K", Price = 25_000m };
 
@@ -73,9 +68,8 @@ public class ProductsApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal("Монитор", product.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateThenGetById_DataMatchesExactly(int _)
+    [Fact]
+    public async Task CreateThenGetById_DataMatchesExactly()
     {
         var createRequest = new CreateProductRequest { Name = "Системный блок", Description = "Core i9", Price = 80_000m };
         var createResponse = await Client.PostAsJsonAsync("/api/products", createRequest);
@@ -94,9 +88,8 @@ public class ProductsApiCrRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт несколько товаров через API, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateProductAsync("Товар А", 100m);
         var b = await CreateProductAsync("Товар Б", 200m);
@@ -125,9 +118,8 @@ public class ProductsApiCrRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт товар, обновляет через PUT, проверяет GET, удаляет — полный HTTP-цикл.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist()
     {
         var created = await CreateProductAsync("Монитор", 20_000m);
 

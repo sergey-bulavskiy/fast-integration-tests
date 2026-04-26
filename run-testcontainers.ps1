@@ -1,12 +1,10 @@
 param(
-    [int]$Repeat = 5,
     [int]$Threads = 4
 )
 
-$env:TEST_REPEAT = $Repeat
 $start = Get-Date
 
-Write-Host "Testcontainers | repeat=$Repeat | threads=$Threads"
+Write-Host "Testcontainers | threads=$Threads"
 dotnet test tests/FastIntegrationTests.Tests.Testcontainers `
     -- xUnit.MaxParallelThreads=$Threads
 

@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Discounts;
+﻿namespace FastIntegrationTests.Tests.Respawn.Discounts;
 
 /// <summary>
 /// Тесты HTTP-уровня: GetAll, GetById для DiscountsController.
@@ -10,9 +10,8 @@ public class DiscountsApiCrRespawnTests : RespawnApiTestBase
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
     public DiscountsApiCrRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray(int _)
+    [Fact]
+    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray()
     {
         var response = await Client.GetAsync("/api/discounts");
 
@@ -21,9 +20,8 @@ public class DiscountsApiCrRespawnTests : RespawnApiTestBase
         Assert.Empty(items!);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenExist_Returns200WithDiscounts(int _)
+    [Fact]
+    public async Task GetAll_WhenExist_Returns200WithDiscounts()
     {
         await CreateDiscountAsync("SALE10", 10);
         await CreateDiscountAsync("SALE20", 20);
@@ -35,9 +33,8 @@ public class DiscountsApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal(2, items!.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenExists_Returns200WithDiscount(int _)
+    [Fact]
+    public async Task GetById_WhenExists_Returns200WithDiscount()
     {
         var created = await CreateDiscountAsync("PROMO15", 15);
 
@@ -49,9 +46,8 @@ public class DiscountsApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal("PROMO15", item.Code);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task GetById_WhenNotFound_Returns404()
     {
         var response = await Client.GetAsync($"/api/discounts/{Guid.NewGuid()}");
 
@@ -61,9 +57,8 @@ public class DiscountsApiCrRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт несколько скидок через API, проверяет GetAll и GetById каждой.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateDiscountAsync("SALE10", 10);
         var b = await CreateDiscountAsync("SALE20", 20);
@@ -88,9 +83,8 @@ public class DiscountsApiCrRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт скидку, активирует, деактивирует, обновляет через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateActivateDeactivateUpdate_AllPersist(int _)
+    [Fact]
+    public async Task CreateActivateDeactivateUpdate_AllPersist()
     {
         var created = await CreateDiscountAsync("START10", 10);
         Assert.False(created.IsActive);

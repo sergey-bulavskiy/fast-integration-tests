@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Categories;
+﻿namespace FastIntegrationTests.Tests.Respawn.Categories;
 
 /// <summary>
 /// Тесты HTTP-уровня: GetAll, GetById для CategoriesController.
@@ -10,9 +10,8 @@ public class CategoriesApiCrRespawnTests : RespawnApiTestBase
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
     public CategoriesApiCrRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray(int _)
+    [Fact]
+    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray()
     {
         var response = await Client.GetAsync("/api/categories");
 
@@ -21,9 +20,8 @@ public class CategoriesApiCrRespawnTests : RespawnApiTestBase
         Assert.Empty(items!);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenExist_Returns200WithCategories(int _)
+    [Fact]
+    public async Task GetAll_WhenExist_Returns200WithCategories()
     {
         await CreateCategoryAsync("Электроника");
         await CreateCategoryAsync("Одежда");
@@ -35,9 +33,8 @@ public class CategoriesApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal(2, items!.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenExists_Returns200WithCategory(int _)
+    [Fact]
+    public async Task GetById_WhenExists_Returns200WithCategory()
     {
         var created = await CreateCategoryAsync("Книги");
 
@@ -49,9 +46,8 @@ public class CategoriesApiCrRespawnTests : RespawnApiTestBase
         Assert.Equal("Книги", item.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task GetById_WhenNotFound_Returns404()
     {
         var response = await Client.GetAsync($"/api/categories/{Guid.NewGuid()}");
 
@@ -61,9 +57,8 @@ public class CategoriesApiCrRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт несколько категорий через API, проверяет GetAll и GetById каждой.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateCategoryAsync("Электроника");
         var b = await CreateCategoryAsync("Одежда");
@@ -92,9 +87,8 @@ public class CategoriesApiCrRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт категорию, обновляет через PUT, проверяет GET, удаляет — полный HTTP-цикл.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist()
     {
         var created = await CreateCategoryAsync("Спорт");
 

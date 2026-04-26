@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Testcontainers.Customers;
+﻿namespace FastIntegrationTests.Tests.Testcontainers.Customers;
 
 /// <summary>
 /// Тесты сервисного уровня: GetAll, GetById, Create для CustomerService.
@@ -30,18 +30,16 @@ public class CustomerServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
         await _context.DisposeAsync();
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenNoCustomers_ReturnsEmptyList(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenNoCustomers_ReturnsEmptyList()
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenCustomersExist_ReturnsAllCustomers(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenCustomersExist_ReturnsAllCustomers()
     {
         await Sut.CreateAsync(new CreateCustomerRequest { Name = "Иван", Email = "ivan@example.com" });
         await Sut.CreateAsync(new CreateCustomerRequest { Name = "Мария", Email = "maria@example.com" });
@@ -51,9 +49,8 @@ public class CustomerServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
         Assert.Equal(2, result.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenExists_ReturnsCustomer(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenExists_ReturnsCustomer()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Пётр", Email = "petr@example.com", Phone = "+79001234567" });
 
@@ -65,16 +62,14 @@ public class CustomerServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
         Assert.Equal("+79001234567", result.Phone);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(Guid.NewGuid()));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_PersistsAndReturns(int _)
+    [Fact]
+    public async Task CreateAsync_PersistsAndReturns()
     {
         var result = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Анна", Email = "anna@example.com" });
 
@@ -88,9 +83,8 @@ public class CustomerServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
     /// <summary>
     /// Создаёт несколько покупателей, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Иван", Email = "ivan@example.com" });
         var b = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Мария", Email = "maria@example.com" });
@@ -114,9 +108,8 @@ public class CustomerServiceCrContainerTests : IAsyncLifetime, IClassFixture<Con
     /// <summary>
     /// Создаёт покупателя, выполняет Ban → Activate → Deactivate, проверяет статус после каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect(int _)
+    [Fact]
+    public async Task CreateBanActivateDeactivate_StatusTransitionsCorrect()
     {
         var created = await Sut.CreateAsync(new CreateCustomerRequest { Name = "Клиент", Email = "client@example.com" });
         Assert.Equal(CustomerStatus.Active, created.Status);

@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Testcontainers.Orders;
+﻿namespace FastIntegrationTests.Tests.Testcontainers.Orders;
 
 /// <summary>
 /// Тесты HTTP-уровня: GetAll, GetById, Create для OrdersController.
@@ -12,9 +12,8 @@ public class OrdersApiCrContainerTests : ContainerApiTestBase
     /// <param name="fixture">Запущенный контейнер с СУБД.</param>
     public OrdersApiCrContainerTests(ContainerFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenNoOrders_Returns200WithEmptyArray(int _)
+    [Fact]
+    public async Task GetAll_WhenNoOrders_Returns200WithEmptyArray()
     {
         var response = await Client.GetAsync("/api/orders");
 
@@ -23,9 +22,8 @@ public class OrdersApiCrContainerTests : ContainerApiTestBase
         Assert.Empty(orders!);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenOrdersExist_Returns200WithOrders(int _)
+    [Fact]
+    public async Task GetAll_WhenOrdersExist_Returns200WithOrders()
     {
         await CreateOrderWithProductAsync();
         await CreateOrderWithProductAsync();
@@ -37,9 +35,8 @@ public class OrdersApiCrContainerTests : ContainerApiTestBase
         Assert.Equal(2, orders!.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenOrderExists_Returns200WithItems(int _)
+    [Fact]
+    public async Task GetById_WhenOrderExists_Returns200WithItems()
     {
         var created = await CreateOrderWithProductAsync();
 
@@ -51,18 +48,16 @@ public class OrdersApiCrContainerTests : ContainerApiTestBase
         Assert.Single(order.Items);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenOrderNotFound_Returns404(int _)
+    [Fact]
+    public async Task GetById_WhenOrderNotFound_Returns404()
     {
         var response = await Client.GetAsync("/api/orders/999");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_ValidRequest_Returns201WithCalculatedTotalAmount(int _)
+    [Fact]
+    public async Task Create_ValidRequest_Returns201WithCalculatedTotalAmount()
     {
         var product = await CreateProductAsync("Процессор", 15_000m);
         var request = new CreateOrderRequest
@@ -79,9 +74,8 @@ public class OrdersApiCrContainerTests : ContainerApiTestBase
         Assert.Equal(30_000m, order.TotalAmount); // 2 * 15000
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_WhenProductNotFound_Returns404(int _)
+    [Fact]
+    public async Task Create_WhenProductNotFound_Returns404()
     {
         var request = new CreateOrderRequest
         {
@@ -96,9 +90,8 @@ public class OrdersApiCrContainerTests : ContainerApiTestBase
     /// <summary>
     /// Создаёт заказ с тремя позициями через API — проверяет итоговую сумму и состав.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task MultiItemOrder_TotalAmountAndItemsCorrect(int _)
+    [Fact]
+    public async Task MultiItemOrder_TotalAmountAndItemsCorrect()
     {
         var p1 = await CreateProductAsync("Телефон", 30_000m);
         var p2 = await CreateProductAsync("Чехол", 500m);
@@ -138,9 +131,8 @@ public class OrdersApiCrContainerTests : ContainerApiTestBase
     /// <summary>
     /// Создаёт заказ с тремя позициями, проводит полный lifecycle через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect(int _)
+    [Fact]
+    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect()
     {
         var p1 = await CreateProductAsync("Ноутбук", 50_000m);
         var p2 = await CreateProductAsync("Мышь", 2_000m);

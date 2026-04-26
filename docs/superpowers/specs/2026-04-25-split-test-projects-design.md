@@ -1,5 +1,7 @@
 # Разбивка тестов на отдельные проекты — Design Spec
 
+> **Примечание:** Механизм `TestRepeat` заменён на `ClassScale` — см. `docs/superpowers/specs/2026-04-26-class-scale-scenario2-design.md`.
+
 **Дата:** 2026-04-25  
 **Цель:** Разнести единый `FastIntegrationTests.Tests` на четыре проекта — по одному на подход плюс общий Shared — чтобы каждый подход запускался отдельной командой без `--filter`.
 

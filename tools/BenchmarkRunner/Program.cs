@@ -3,11 +3,12 @@ using BenchmarkRunner.Migrations;
 using BenchmarkRunner.Models;
 using BenchmarkRunner.Report;
 using BenchmarkRunner.Runner;
+using BenchmarkRunner.Scale;
 
 // ─── Аргументы командной строки ────────────────────────────────────────────
-int defaultThreads = 8;  // для сценариев, где потоки не варьируются (1 и 2)
-int defaultRepeat  = 12; // для сценариев, где повторы не варьируются (1 и 3)
-int timeoutMinutes = 50; // таймаут одного прогона dotnet test
+int defaultThreads     = 8;  // для сценариев, где потоки не варьируются (1 и 2)
+int defaultClassScale  = 12; // для сценариев, где масштаб не варьируется (1 и 3)
+int timeoutMinutes     = 50; // таймаут одного прогона dotnet test
 
 // хардкод — обновить при добавлении/удалении тест-методов в тест-проектах
 // проверить: dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --list-tests 2>&1 | grep "FastIntegrationTests.Tests.IntegreSQL" | wc -l
@@ -15,10 +16,10 @@ const int BaseTestCount = 223;
 
 for (var i = 0; i < args.Length - 1; i++)
 {
+    if (args[i] is "--scale" or "-s" && int.TryParse(args[i + 1], out var s) && s > 0)
+        defaultClassScale = s;
     if (args[i] is "--threads" or "-t" && int.TryParse(args[i + 1], out var t) && t > 0)
         defaultThreads = t;
-    if (args[i] is "--repeat" or "-r" && int.TryParse(args[i + 1], out var r) && r > 0)
-        defaultRepeat = r;
     if (args[i] is "--timeout" && int.TryParse(args[i + 1], out var to) && to > 0)
         timeoutMinutes = to;
 }
@@ -26,82 +27,118 @@ for (var i = 0; i < args.Length - 1; i++)
 var repoRoot         = FindRepoRoot();
 var runner           = new TestRunner(repoRoot, TimeSpan.FromMinutes(timeoutMinutes));
 var migrationManager = new MigrationManager(repoRoot);
+var classScaleManager = new ClassScaleManager(repoRoot);
 var reportGenerator  = new ReportGenerator(repoRoot);
 var results          = new List<BenchmarkResult>();
 
-const int BaseMigrations = 17;
-var approaches         = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
-var migrationCounts    = new[] { 17, 42, 67, 92, 117 };
-var scalingRepeats     = new[] { 1, 5, 10, 20, 50 };
-var parallelismThreads = new[] { 1, 2, 4, 8 };
-runner.SetTotalRuns((migrationCounts.Length + scalingRepeats.Length + parallelismThreads.Length) * approaches.Length);
+const int BaseMigrations   = 17;
+var approaches             = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
+var migrationCounts        = new[] { 17, 42, 67, 92, 117 };
+var classScaleFactors      = new[] { 1, 5, 10, 20, 50 };
+var parallelismThreads     = new[] { 1, 2, 4, 8 };
+runner.SetTotalRuns((migrationCounts.Length + classScaleFactors.Length + parallelismThreads.Length) * approaches.Length);
 
 Console.WriteLine("=== Integration Test Benchmark Runner ===");
 Console.WriteLine($"Repo:    {repoRoot}");
 Console.WriteLine($"Machine: {Environment.MachineName}");
 Console.WriteLine($"Time:    {DateTime.Now:yyyy-MM-dd HH:mm}");
-Console.WriteLine($"Config:  threads={defaultThreads}, repeat={defaultRepeat}, timeout={timeoutMinutes}m");
+Console.WriteLine($"Config:  threads={defaultThreads}, scale={defaultClassScale}, timeout={timeoutMinutes}m");
 Console.WriteLine("\nDocker must be running. Full run takes ~1-2 hours.");
 Console.WriteLine("Press Enter to start, Ctrl+C to cancel...");
 Console.ReadLine();
 
-// Убрать фейковые миграции, которые могли остаться от прерванного прогона
+// Убрать фейковые миграции и scale-классы, которые могли остаться от прерванного прогона
 migrationManager.RemoveFakeMigrations();
+classScaleManager.RemoveScaleClasses();
 
 // Первичная сборка
 runner.Build();
 
 try
 {
-    // ─── Warmup: разогреть Docker + JIT для всех трёх подходов ─────────────────
-    // Каждый подход запускается по одному разу (TEST_REPEAT=1), результаты не сохраняются.
-    // Цель: вытащить Docker-образы, прогреть JIT теста и container-startup каждого подхода
-    // до первой измеряемой точки Сценария 1.
+    // ─── Warmup ─────────────────────────────────────────────────────────────────
     Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Warmup (не входит в отчёт) ═══");
     foreach (var approach in approaches)
     {
-        var warmup = runner.Warmup(new BenchmarkScenario(approach, "warmup", BaseMigrations, TestRepeat: 1, MaxParallelThreads: defaultThreads));
+        var warmup = runner.Warmup(new BenchmarkScenario(approach, "warmup", BaseMigrations, defaultThreads));
         if (!warmup.Success)
             throw new BenchmarkAbortedException();
     }
 
     // ─── Сценарий 1: влияние числа миграций ────────────────────────────────────
     Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Scenario 1: Migration Count Impact ═══");
-    foreach (var migrationCount in migrationCounts)
+    classScaleManager.AddScaleClasses(defaultClassScale);
+    runner.Build();
+    try
     {
-        var fakesToAdd = migrationCount - BaseMigrations;
-        try
+        foreach (var migrationCount in migrationCounts)
         {
-            if (fakesToAdd > 0)
+            var fakesToAdd = migrationCount - BaseMigrations;
+            try
             {
-                migrationManager.AddFakeMigrations(fakesToAdd);
-                runner.Build();
+                if (fakesToAdd > 0)
+                {
+                    migrationManager.AddFakeMigrations(fakesToAdd);
+                    runner.Build();
+                }
+                foreach (var approach in approaches)
+                    RunOrAbort(new BenchmarkScenario(approach, "migrations", migrationCount, defaultThreads, defaultClassScale));
             }
-
-            foreach (var approach in approaches)
-                RunOrAbort(new BenchmarkScenario(approach, "migrations", migrationCount, TestRepeat: defaultRepeat, MaxParallelThreads: defaultThreads));
-        }
-        finally
-        {
-            if (fakesToAdd > 0)
+            finally
             {
-                migrationManager.RemoveFakeMigrations();
-                runner.Build();
+                if (fakesToAdd > 0)
+                {
+                    migrationManager.RemoveFakeMigrations();
+                    runner.Build();
+                }
             }
         }
+    }
+    finally
+    {
+        try { classScaleManager.RemoveScaleClasses(); runner.Build(); }
+        catch (Exception ex) { Console.Error.WriteLine($"[warn] cleanup failed: {ex.Message}"); }
     }
 
     // ─── Сценарий 2: масштаб числа тестов ──────────────────────────────────────
     Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Scenario 2: Test Count Scaling ═══");
-    foreach (var repeat in scalingRepeats)
-        foreach (var approach in approaches)
-            RunOrAbort(new BenchmarkScenario(approach, "scale", BaseMigrations, TestRepeat: repeat, MaxParallelThreads: defaultThreads));
+    foreach (var scale in classScaleFactors)
+    {
+        try
+        {
+            if (scale > 1)
+            {
+                classScaleManager.AddScaleClasses(scale);
+                runner.Build();
+            }
+            foreach (var approach in approaches)
+                RunOrAbort(new BenchmarkScenario(approach, "scale", BaseMigrations, defaultThreads, scale));
+        }
+        finally
+        {
+            if (scale > 1)
+            {
+                try { classScaleManager.RemoveScaleClasses(); runner.Build(); }
+                catch (Exception ex) { Console.Error.WriteLine($"[warn] cleanup failed: {ex.Message}"); }
+            }
+        }
+    }
 
     // ─── Сценарий 3: параллелизм ────────────────────────────────────────────────
     Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Scenario 3: Parallelism ═══");
-    foreach (var parallelism in parallelismThreads)
-        foreach (var approach in approaches)
-            RunOrAbort(new BenchmarkScenario(approach, "parallelism", BaseMigrations, TestRepeat: defaultRepeat, MaxParallelThreads: parallelism));
+    classScaleManager.AddScaleClasses(defaultClassScale);
+    runner.Build();
+    try
+    {
+        foreach (var parallelism in parallelismThreads)
+            foreach (var approach in approaches)
+                RunOrAbort(new BenchmarkScenario(approach, "parallelism", BaseMigrations, parallelism, defaultClassScale));
+    }
+    finally
+    {
+        try { classScaleManager.RemoveScaleClasses(); runner.Build(); }
+        catch (Exception ex) { Console.Error.WriteLine($"[warn] cleanup failed: {ex.Message}"); }
+    }
 }
 catch (BenchmarkAbortedException)
 {

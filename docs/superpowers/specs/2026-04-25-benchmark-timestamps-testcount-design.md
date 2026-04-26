@@ -1,5 +1,7 @@
 # Бенчмарк: таймстемпы файлов и отображение количества тестов
 
+> **Примечание:** Механизм `TestRepeat` заменён на `ClassScale` — см. `docs/superpowers/specs/2026-04-26-class-scale-scenario2-design.md`.
+
 ## Цель
 
 Два независимых улучшения BenchmarkRunner:

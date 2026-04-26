@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Testcontainers.Orders;
+﻿namespace FastIntegrationTests.Tests.Testcontainers.Orders;
 
 /// <summary>
 /// Тесты сервисного уровня: статусные переходы для OrderService.
@@ -15,9 +15,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
     /// <param name="fixture">Запущенный контейнер с СУБД.</param>
     public OrderServiceUdContainerTests(ContainerFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task ConfirmAsync_ChangesStatusFromNewToConfirmed(int _)
+    [Fact]
+    public async Task ConfirmAsync_ChangesStatusFromNewToConfirmed()
     {
         var order = await CreateOrderAsync();
 
@@ -26,9 +25,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
         Assert.Equal(OrderStatus.Confirmed, confirmed.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task ShipAsync_ChangesStatusFromConfirmedToShipped(int _)
+    [Fact]
+    public async Task ShipAsync_ChangesStatusFromConfirmedToShipped()
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -38,9 +36,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
         Assert.Equal(OrderStatus.Shipped, shipped.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CompleteAsync_ChangesStatusFromShippedToCompleted(int _)
+    [Fact]
+    public async Task CompleteAsync_ChangesStatusFromShippedToCompleted()
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -51,9 +48,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
         Assert.Equal(OrderStatus.Completed, completed.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CancelAsync_ChangesStatusFromNewToCancelled(int _)
+    [Fact]
+    public async Task CancelAsync_ChangesStatusFromNewToCancelled()
     {
         var order = await CreateOrderAsync();
 
@@ -62,9 +58,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
         Assert.Equal(OrderStatus.Cancelled, cancelled.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CancelAsync_ChangesStatusFromConfirmedToCancelled(int _)
+    [Fact]
+    public async Task CancelAsync_ChangesStatusFromConfirmedToCancelled()
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -74,9 +69,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
         Assert.Equal(OrderStatus.Cancelled, cancelled.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task ConfirmAsync_WhenOrderIsCompleted_ThrowsInvalidOrderStatusTransitionException(int _)
+    [Fact]
+    public async Task ConfirmAsync_WhenOrderIsCompleted_ThrowsInvalidOrderStatusTransitionException()
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -87,9 +81,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
             () => Sut.ConfirmAsync(order.Id));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CancelAsync_WhenOrderIsShipped_ThrowsInvalidOrderStatusTransitionException(int _)
+    [Fact]
+    public async Task CancelAsync_WhenOrderIsShipped_ThrowsInvalidOrderStatusTransitionException()
     {
         var order = await CreateOrderAsync();
         await Sut.ConfirmAsync(order.Id);
@@ -99,9 +92,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
             () => Sut.CancelAsync(order.Id));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task FullLifecycle_CreateConfirmShipComplete_StatusCorrectAtEachStep(int _)
+    [Fact]
+    public async Task FullLifecycle_CreateConfirmShipComplete_StatusCorrectAtEachStep()
     {
         var order = await CreateOrderAsync();
         Assert.Equal(OrderStatus.New, order.Status);
@@ -122,9 +114,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
     /// <summary>
     /// Создаёт заказ с тремя позициями разных товаров — проверяет итоговую сумму и состав.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task MultiItemOrder_TotalAmountAndItemsCorrect(int _)
+    [Fact]
+    public async Task MultiItemOrder_TotalAmountAndItemsCorrect()
     {
         var p1 = await _products.CreateAsync(new CreateProductRequest { Name = "Телефон", Price = 30_000m });
         var p2 = await _products.CreateAsync(new CreateProductRequest { Name = "Чехол", Price = 500m });
@@ -163,9 +154,8 @@ public class OrderServiceUdContainerTests : ContainerServiceTestBase
     /// <summary>
     /// Создаёт заказ с тремя позициями, проводит полный lifecycle, проверяет итоговую сумму и статус.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect(int _)
+    [Fact]
+    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect()
     {
         var p1 = await _products.CreateAsync(new CreateProductRequest { Name = "Ноутбук", Price = 50_000m });
         var p2 = await _products.CreateAsync(new CreateProductRequest { Name = "Мышь", Price = 2_000m });

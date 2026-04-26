@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Categories;
+﻿namespace FastIntegrationTests.Tests.Respawn.Categories;
 
 /// <summary>
 /// Тесты сервисного уровня: Create (ошибки), Update, Delete для CategoryService.
@@ -19,9 +19,8 @@ public class CategoryServiceUdRespawnTests : RespawnServiceTestBase
         Sut = new CategoryService(new CategoryRepository(Context));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_WhenDuplicateName_ThrowsDuplicateValueException(int _)
+    [Fact]
+    public async Task CreateAsync_WhenDuplicateName_ThrowsDuplicateValueException()
     {
         await Sut.CreateAsync(new CreateCategoryRequest { Name = "Электроника" });
 
@@ -29,9 +28,8 @@ public class CategoryServiceUdRespawnTests : RespawnServiceTestBase
             () => Sut.CreateAsync(new CreateCategoryRequest { Name = "Электроника" }));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task UpdateAsync_UpdatesFields(int _)
+    [Fact]
+    public async Task UpdateAsync_UpdatesFields()
     {
         var created = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Старое", Description = "Старое описание" });
 
@@ -44,17 +42,15 @@ public class CategoryServiceUdRespawnTests : RespawnServiceTestBase
         Assert.Equal("Новое", fetched.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task UpdateAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task UpdateAsync_WhenNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(
             () => Sut.UpdateAsync(Guid.NewGuid(), new UpdateCategoryRequest { Name = "Любое" }));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeleteAsync_RemovesCategory(int _)
+    [Fact]
+    public async Task DeleteAsync_RemovesCategory()
     {
         var created = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Удаляемая" });
 
@@ -66,9 +62,8 @@ public class CategoryServiceUdRespawnTests : RespawnServiceTestBase
     /// <summary>
     /// Создаёт несколько категорий, проверяет GetAll и GetById каждой.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Электроника", Description = "Гаджеты" });
         var b = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Одежда" });
@@ -92,9 +87,8 @@ public class CategoryServiceUdRespawnTests : RespawnServiceTestBase
     /// <summary>
     /// Создаёт категорию, обновляет, проверяет персистентность, удаляет.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist()
     {
         var created = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Спорт", Description = "Инвентарь" });
         var updated = await Sut.UpdateAsync(created.Id, new UpdateCategoryRequest { Name = "Спорт и фитнес", Description = "Тренажёры и инвентарь" });

@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Suppliers;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Suppliers;
 
 /// <summary>
 /// Тесты HTTP-уровня: Create, Update, Delete, Activate, Deactivate для SuppliersController.
@@ -6,9 +6,8 @@ namespace FastIntegrationTests.Tests.IntegreSQL.Suppliers;
 /// </summary>
 public class SuppliersApiUdTests : ComponentTestBase
 {
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_ValidRequest_Returns201WithLocationHeader(int _)
+    [Fact]
+    public async Task Create_ValidRequest_Returns201WithLocationHeader()
     {
         var request = new CreateSupplierRequest { Name = "ООО Альфа", ContactEmail = "alpha@vendor.com", Country = "Россия" };
 
@@ -21,9 +20,8 @@ public class SuppliersApiUdTests : ComponentTestBase
         Assert.Equal("ООО Альфа", item.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_WhenDuplicateEmail_Returns409(int _)
+    [Fact]
+    public async Task Create_WhenDuplicateEmail_Returns409()
     {
         await Client.PostAsJsonAsync("/api/suppliers", new CreateSupplierRequest { Name = "ООО Альфа", ContactEmail = "dup@vendor.com", Country = "Россия" });
 
@@ -32,9 +30,8 @@ public class SuppliersApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenExists_Returns200WithUpdatedFields(int _)
+    [Fact]
+    public async Task Update_WhenExists_Returns200WithUpdatedFields()
     {
         var created = await CreateSupplierAsync("Старый", "old@vendor.com");
 
@@ -48,9 +45,8 @@ public class SuppliersApiUdTests : ComponentTestBase
         Assert.Equal("Казахстан", updated.Country);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task Update_WhenNotFound_Returns404()
     {
         var response = await Client.PutAsJsonAsync($"/api/suppliers/{Guid.NewGuid()}",
             new UpdateSupplierRequest { Name = "Любой", ContactEmail = "any@vendor.com", Country = "Россия" });
@@ -58,9 +54,8 @@ public class SuppliersApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Delete_WhenExists_Returns204()
     {
         var created = await CreateSupplierAsync("Удаляемый", "del@vendor.com");
 
@@ -69,9 +64,8 @@ public class SuppliersApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Activate_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Activate_WhenExists_Returns204()
     {
         var created = await CreateSupplierAsync("Неактивный", "inactive@vendor.com");
         await Client.PostAsync($"/api/suppliers/{created.Id}/deactivate", null);
@@ -81,9 +75,8 @@ public class SuppliersApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Deactivate_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Deactivate_WhenExists_Returns204()
     {
         var created = await CreateSupplierAsync("Активный", "active@vendor.com");
 
@@ -95,9 +88,8 @@ public class SuppliersApiUdTests : ComponentTestBase
     /// <summary>
     /// Создаёт несколько поставщиков через API, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateSupplierAsync("ООО Альфа", "alpha@example.com");
         var b = await CreateSupplierAsync("ИП Бета", "beta@example.com");
@@ -122,9 +114,8 @@ public class SuppliersApiUdTests : ComponentTestBase
     /// <summary>
     /// Создаёт поставщика, обновляет, деактивирует, активирует через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDeactivateActivate_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDeactivateActivate_AllPersist()
     {
         var created = await CreateSupplierAsync("ООО Старт", "start@example.com");
 

@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Testcontainers.Reviews;
+﻿namespace FastIntegrationTests.Tests.Testcontainers.Reviews;
 
 /// <summary>
 /// Тесты HTTP-уровня: GetAll, GetById для ReviewsController.
@@ -12,9 +12,8 @@ public class ReviewsApiCrContainerTests : ContainerApiTestBase
     /// <param name="fixture">Запущенный контейнер с СУБД.</param>
     public ReviewsApiCrContainerTests(ContainerFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray(int _)
+    [Fact]
+    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray()
     {
         var response = await Client.GetAsync("/api/reviews");
 
@@ -23,9 +22,8 @@ public class ReviewsApiCrContainerTests : ContainerApiTestBase
         Assert.Empty(items!);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenExist_Returns200WithReviews(int _)
+    [Fact]
+    public async Task GetAll_WhenExist_Returns200WithReviews()
     {
         await CreateReviewAsync("Отлично", 5);
         await CreateReviewAsync("Хорошо", 4);
@@ -37,9 +35,8 @@ public class ReviewsApiCrContainerTests : ContainerApiTestBase
         Assert.Equal(2, items!.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenExists_Returns200WithReview(int _)
+    [Fact]
+    public async Task GetById_WhenExists_Returns200WithReview()
     {
         var created = await CreateReviewAsync("Хороший товар", 4);
 
@@ -51,9 +48,8 @@ public class ReviewsApiCrContainerTests : ContainerApiTestBase
         Assert.Equal("Хороший товар", item.Title);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task GetById_WhenNotFound_Returns404()
     {
         var response = await Client.GetAsync($"/api/reviews/{Guid.NewGuid()}");
 
@@ -63,9 +59,8 @@ public class ReviewsApiCrContainerTests : ContainerApiTestBase
     /// <summary>
     /// Создаёт несколько отзывов через API, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateReviewAsync("Отлично", 5);
         var b = await CreateReviewAsync("Хорошо", 4);
@@ -91,9 +86,8 @@ public class ReviewsApiCrContainerTests : ContainerApiTestBase
     /// <summary>
     /// Создаёт два отзыва, один одобряет, второй отклоняет через API, первый удаляет.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect(int _)
+    [Fact]
+    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect()
     {
         var toApprove = await CreateReviewAsync("Одобрить", 5);
         var toReject = await CreateReviewAsync("Отклонить", 1);

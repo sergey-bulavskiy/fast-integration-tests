@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Discounts;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Discounts;
 
 /// <summary>
 /// Тесты HTTP-уровня: GetAll, GetById для DiscountsController.
@@ -6,9 +6,8 @@ namespace FastIntegrationTests.Tests.IntegreSQL.Discounts;
 /// </summary>
 public class DiscountsApiCrTests : ComponentTestBase
 {
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray(int _)
+    [Fact]
+    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray()
     {
         var response = await Client.GetAsync("/api/discounts");
 
@@ -17,9 +16,8 @@ public class DiscountsApiCrTests : ComponentTestBase
         Assert.Empty(items!);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenExist_Returns200WithDiscounts(int _)
+    [Fact]
+    public async Task GetAll_WhenExist_Returns200WithDiscounts()
     {
         await CreateDiscountAsync("SALE10", 10);
         await CreateDiscountAsync("SALE20", 20);
@@ -31,9 +29,8 @@ public class DiscountsApiCrTests : ComponentTestBase
         Assert.Equal(2, items!.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenExists_Returns200WithDiscount(int _)
+    [Fact]
+    public async Task GetById_WhenExists_Returns200WithDiscount()
     {
         var created = await CreateDiscountAsync("PROMO15", 15);
 
@@ -45,9 +42,8 @@ public class DiscountsApiCrTests : ComponentTestBase
         Assert.Equal("PROMO15", item.Code);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task GetById_WhenNotFound_Returns404()
     {
         var response = await Client.GetAsync($"/api/discounts/{Guid.NewGuid()}");
 
@@ -57,9 +53,8 @@ public class DiscountsApiCrTests : ComponentTestBase
     /// <summary>
     /// Создаёт несколько скидок через API, проверяет GetAll и GetById каждой.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateDiscountAsync("SALE10", 10);
         var b = await CreateDiscountAsync("SALE20", 20);
@@ -84,9 +79,8 @@ public class DiscountsApiCrTests : ComponentTestBase
     /// <summary>
     /// Создаёт скидку, активирует, деактивирует, обновляет через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateActivateDeactivateUpdate_AllPersist(int _)
+    [Fact]
+    public async Task CreateActivateDeactivateUpdate_AllPersist()
     {
         var created = await CreateDiscountAsync("START10", 10);
         Assert.False(created.IsActive);

@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Reviews;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Reviews;
 
 /// <summary>
 /// Тесты сервисного уровня: Create (ошибки), Delete, Approve, Reject для ReviewService.
@@ -15,17 +15,15 @@ public class ReviewServiceUdTests : AppServiceTestBase
         Sut = new ReviewService(new ReviewRepository(Context));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_WhenInvalidRating_ThrowsInvalidRatingException(int _)
+    [Fact]
+    public async Task CreateAsync_WhenInvalidRating_ThrowsInvalidRatingException()
     {
         await Assert.ThrowsAsync<InvalidRatingException>(
             () => Sut.CreateAsync(new CreateReviewRequest { Title = "Плохо", Body = "Не понравилось", Rating = 6 }));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task DeleteAsync_RemovesReview(int _)
+    [Fact]
+    public async Task DeleteAsync_RemovesReview()
     {
         var created = await Sut.CreateAsync(new CreateReviewRequest { Title = "Удаляемый", Body = "Текст", Rating = 3 });
 
@@ -34,9 +32,8 @@ public class ReviewServiceUdTests : AppServiceTestBase
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(created.Id));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task ApproveAsync_ApprovesReview(int _)
+    [Fact]
+    public async Task ApproveAsync_ApprovesReview()
     {
         var created = await Sut.CreateAsync(new CreateReviewRequest { Title = "На модерации", Body = "Текст", Rating = 4 });
 
@@ -45,9 +42,8 @@ public class ReviewServiceUdTests : AppServiceTestBase
         Assert.Equal(ReviewStatus.Approved, approved.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task ApproveAsync_WhenNotPending_ThrowsInvalidStatusTransitionException(int _)
+    [Fact]
+    public async Task ApproveAsync_WhenNotPending_ThrowsInvalidStatusTransitionException()
     {
         var created = await Sut.CreateAsync(new CreateReviewRequest { Title = "Одобренный", Body = "Текст", Rating = 4 });
         await Sut.ApproveAsync(created.Id);
@@ -55,9 +51,8 @@ public class ReviewServiceUdTests : AppServiceTestBase
         await Assert.ThrowsAsync<InvalidStatusTransitionException>(() => Sut.ApproveAsync(created.Id));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task RejectAsync_RejectsReview(int _)
+    [Fact]
+    public async Task RejectAsync_RejectsReview()
     {
         var created = await Sut.CreateAsync(new CreateReviewRequest { Title = "Спам", Body = "Текст", Rating = 1 });
 
@@ -66,9 +61,8 @@ public class ReviewServiceUdTests : AppServiceTestBase
         Assert.Equal(ReviewStatus.Rejected, rejected.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task RejectAsync_WhenNotPending_ThrowsInvalidStatusTransitionException(int _)
+    [Fact]
+    public async Task RejectAsync_WhenNotPending_ThrowsInvalidStatusTransitionException()
     {
         var created = await Sut.CreateAsync(new CreateReviewRequest { Title = "Отклонённый", Body = "Текст", Rating = 1 });
         await Sut.RejectAsync(created.Id);
@@ -79,9 +73,8 @@ public class ReviewServiceUdTests : AppServiceTestBase
     /// <summary>
     /// Создаёт несколько отзывов, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateReviewRequest { Title = "Отлично", Body = "Всё понравилось", Rating = 5 });
         var b = await Sut.CreateAsync(new CreateReviewRequest { Title = "Хорошо", Body = "В целом ок", Rating = 4 });
@@ -105,9 +98,8 @@ public class ReviewServiceUdTests : AppServiceTestBase
     /// <summary>
     /// Создаёт два отзыва, один одобряет, второй отклоняет, проверяет статусы, удаляет первый.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect(int _)
+    [Fact]
+    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect()
     {
         var toApprove = await Sut.CreateAsync(new CreateReviewRequest { Title = "Одобрить", Body = "Хороший отзыв", Rating = 5 });
         var toReject = await Sut.CreateAsync(new CreateReviewRequest { Title = "Отклонить", Body = "Плохой отзыв", Rating = 1 });

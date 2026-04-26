@@ -491,6 +491,7 @@ appsettings.*.local.json
 
 benchmark-results/
 docs/speech/
+docs/benchmark-issues/
 
 # Фейковые миграции для бенчмарка (год 2999 — генерируются и удаляются автоматически)
 **/Migrations/2999*

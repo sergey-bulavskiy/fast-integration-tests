@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Products;
+﻿namespace FastIntegrationTests.Tests.Respawn.Products;
 
 /// <summary>
 /// Тесты HTTP-уровня: Update, Delete для ProductsController.
@@ -10,9 +10,8 @@ public class ProductsApiUdRespawnTests : RespawnApiTestBase
     /// <param name="fixture">Фикстура с контейнером и Respawner.</param>
     public ProductsApiUdRespawnTests(RespawnApiFixture fixture) : base(fixture) { }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenProductExists_Returns200WithUpdatedFields(int _)
+    [Fact]
+    public async Task Update_WhenProductExists_Returns200WithUpdatedFields()
     {
         var created = await CreateProductAsync("Старое", 100m);
         var updateRequest = new UpdateProductRequest { Name = "Новое", Description = "Обновлено", Price = 200m };
@@ -26,9 +25,8 @@ public class ProductsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(200m, updated.Price);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Update_WhenProductNotFound_Returns404(int _)
+    [Fact]
+    public async Task Update_WhenProductNotFound_Returns404()
     {
         var request = new UpdateProductRequest { Name = "Название", Description = string.Empty, Price = 100m };
 
@@ -37,9 +35,8 @@ public class ProductsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenProductExists_Returns204(int _)
+    [Fact]
+    public async Task Delete_WhenProductExists_Returns204()
     {
         var created = await CreateProductAsync("Удаляемый", 100m);
 
@@ -48,9 +45,8 @@ public class ProductsApiUdRespawnTests : RespawnApiTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenProductNotFound_Returns404(int _)
+    [Fact]
+    public async Task Delete_WhenProductNotFound_Returns404()
     {
         var response = await Client.DeleteAsync("/api/products/999");
 
@@ -60,9 +56,8 @@ public class ProductsApiUdRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт несколько товаров через API, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateProductAsync("Товар А", 100m);
         var b = await CreateProductAsync("Товар Б", 200m);
@@ -91,9 +86,8 @@ public class ProductsApiUdRespawnTests : RespawnApiTestBase
     /// <summary>
     /// Создаёт товар, обновляет через PUT, проверяет GET, удаляет — полный HTTP-цикл.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist()
     {
         var created = await CreateProductAsync("Монитор", 20_000m);
 

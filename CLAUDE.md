@@ -46,19 +46,6 @@ dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
 dotnet test tests/FastIntegrationTests.Tests.Respawn
 dotnet test tests/FastIntegrationTests.Tests.Testcontainers
 
-# С повторами — сравнение производительности (bash)
-TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
-TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests.Respawn
-TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests.Testcontainers
-
-# PowerShell
-$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
-$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests.Respawn
-$env:TEST_REPEAT=19; dotnet test tests/FastIntegrationTests.Tests.Testcontainers
-
-# Переопределить количество потоков прямо из CLI
-TEST_REPEAT=19 dotnet test tests/FastIntegrationTests.Tests.IntegreSQL -- xUnit.MaxParallelThreads=8
-
 # Запустить тесты отдельного класса (примеры — суффиксы Cr/Ud, подход без суффикса/Respawn/Container)
 dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --filter "FullyQualifiedName~ProductServiceCrTests"
 dotnet test tests/FastIntegrationTests.Tests.Testcontainers --filter "FullyQualifiedName~OrdersApiUdContainerTests"
@@ -104,16 +91,16 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 
 ### PowerShell скрипты для запуска тестов
 
-В корне репозитория есть готовые скрипты с параметрами `-Repeat` и `-Threads`:
+В корне репозитория есть готовые скрипты с параметром `-Threads`:
 
 ```powershell
-# Бизнес-тесты каждого подхода (по умолчанию: 5 повторов, 4 потока)
+# Бизнес-тесты каждого подхода (по умолчанию: 4 потока)
 .\run-integresql.ps1
 .\run-testcontainers.ps1
 .\run-respawn.ps1
 
 # Переопределить параметры
-.\run-integresql.ps1 -Repeat 19 -Threads 8
+.\run-integresql.ps1 -Threads 8
 ```
 
 Каждый скрипт выводит итоговое время выполнения в формате `мм:сс.ммм`.
@@ -126,9 +113,9 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 # Запуск с дефолтными параметрами (Docker должен быть запущен, ~1–2 часа)
 dotnet run --project tools/BenchmarkRunner
 
-# Переопределить дефолтные потоки и повторы
-dotnet run --project tools/BenchmarkRunner -- --threads 4 --repeat 10
-dotnet run --project tools/BenchmarkRunner -- -t 16 -r 50
+# Переопределить дефолтные потоки и масштаб классов
+dotnet run --project tools/BenchmarkRunner -- --threads 4 --scale 10
+dotnet run --project tools/BenchmarkRunner -- -t 16 -s 50
 
 # После завершения runner выводит точный путь к отчёту, например:
 # Open: benchmark-results/report-20260425-143022.html
@@ -136,8 +123,8 @@ dotnet run --project tools/BenchmarkRunner -- -t 16 -r 50
 
 | Аргумент | По умолчанию | Применяется в |
 |---|---|---|
+| `--scale N` / `-s N` | 12 | Сценарии 1 и 3 (масштаб классов) |
 | `--threads N` / `-t N` | 8 | Сценарии 1 и 2 (потоки не варьируются) |
-| `--repeat N` / `-r N` | 12 | Сценарии 1 и 3 (повторы не варьируются) |
 | `--timeout N` | 50 | Таймаут одного прогона dotnet test (минуты) |
 
 > **Важно:** константа `BaseTestCount` в `tools/BenchmarkRunner/Program.cs` — хардкод.
@@ -148,11 +135,11 @@ dotnet run --project tools/BenchmarkRunner -- -t 16 -r 50
 
 | Сценарий | Фиксируется | Варьируется |
 |---|---|---|
-| 1 — Влияние числа миграций | `--repeat` (~2000 вызовов), `--threads` | 17 / 42 / 67 / 92 / 117 миграций |
-| 2 — Масштаб числа тестов | 17 миграций, `--threads` | TEST_REPEAT: 1, 5, 10, 20, 50 |
-| 3 — Параллелизм | 17 миграций, `--repeat` | потоков: 1, 2, 4, 8 |
+| 1 — Влияние числа миграций | `--scale`, `--threads` | 17 / 42 / 67 / 92 / 117 миграций |
+| 2 — Масштаб числа тестов | 17 миграций, `--threads` | ClassScale: 1, 5, 10, 20, 50 |
+| 3 — Параллелизм | 17 миграций, `--scale` | потоков: 1, 2, 4, 8 |
 
-Итого 42 точки данных (5+5+4 × 3 подхода). Перед Сценарием 1 выполняется warmup-прогон (IntegreSQL, TEST_REPEAT=1), результат не сохраняется. Фейковые миграции генерируются и удаляются автоматически — репозиторий возвращается в исходное состояние.
+Итого 42 точки данных (5+5+4 × 3 подхода). Перед Сценарием 1 выполняется warmup-прогон (IntegreSQL, ClassScale=1), результат не сохраняется. Фейковые миграции генерируются и удаляются автоматически — репозиторий возвращается в исходное состояние.
 
 ### Фейковые миграции
 
@@ -190,7 +177,7 @@ tools/BenchmarkRunner/
 - **Application** — доменные сущности (`Entities/`), перечисления (`Enums/`), DTO (`DTOs/`), интерфейсы репозиториев и сервисов (`Interfaces/`), сервисы бизнес-логики (`Services/`), доменные исключения (`Exceptions/`). Не зависит от EF Core и конкретной СУБД.
 - **Infrastructure** — реализация репозиториев через EF Core (`Repositories/`), `ShopDbContext` с конфигурациями (`Data/`), extension-методы регистрации DI (`Extensions/ServiceCollectionExtensions.cs`).
 - **WebApi** — контроллеры (`Controllers/`), `Program.cs` с DI-конфигурацией, глобальная обработка ошибок (`Middleware/GlobalExceptionHandler.cs`).
-- **Tests.Shared** (`tests/FastIntegrationTests.Tests.Shared/`) — общая инфраструктура для всех трёх подходов: `TestRepeat` (управление числом повторов через `TEST_REPEAT`) и `TestWebApplicationFactory` (ASP.NET Core тест-сервер с подменой строки подключения).
+- **Tests.Shared** (`tests/FastIntegrationTests.Tests.Shared/`) — общая инфраструктура для всех трёх подходов: `TestWebApplicationFactory` (ASP.NET Core тест-сервер с подменой строки подключения).
 - **Tests.IntegreSQL** (`tests/FastIntegrationTests.Tests.IntegreSQL/`) — интеграционные тесты через IntegreSQL. Инфраструктура: `AppServiceTestBase`, `ComponentTestBase`, `IntegreSQL/` (менеджер контейнеров). Тест-классы в папках по сущностям: `Categories/`, `Customers/`, `Discounts/`, `Orders/`, `Products/`, `Reviews/`, `Suppliers/` — по 4 класса на сущность (`*CrTests`, `*UdTests` для сервисного и HTTP уровней).
 - **Tests.Respawn** (`tests/FastIntegrationTests.Tests.Respawn/`) — интеграционные тесты через Respawn. Инфраструктура: `RespawnServiceTestBase`, `RespawnApiTestBase`, `RespawnFixture`, `RespawnApiFixture`. Та же структура тест-классов.
 - **Tests.Testcontainers** (`tests/FastIntegrationTests.Tests.Testcontainers/`) — интеграционные тесты через Testcontainers. Инфраструктура: `ContainerServiceTestBase`, `ContainerApiTestBase`, `TestDbFactory`, `ContainerFixture`. Та же структура тест-классов.

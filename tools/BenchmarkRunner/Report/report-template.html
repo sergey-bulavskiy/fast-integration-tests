@@ -64,7 +64,7 @@
     (function buildSubtitles() {
       const m1 = data.results.find(r => r.scenario.scenarioName === 'migrations');
       if (m1) document.getElementById('subtitle-migrations').textContent =
-        `${m1.scenario.testRepeat * BASE_TEST_COUNT} тестов, потоков=${m1.scenario.maxParallelThreads}` +
+        `${m1.scenario.classScale * BASE_TEST_COUNT} тестов, потоков=${m1.scenario.maxParallelThreads}` +
         ` | Ось X: количество миграций в проекте`;
 
       const m2 = data.results.find(r => r.scenario.scenarioName === 'scale');
@@ -74,11 +74,11 @@
 
       const m3 = data.results.find(r => r.scenario.scenarioName === 'parallelism');
       if (m3) document.getElementById('subtitle-parallelism').textContent =
-        `${m3.scenario.migrationCount} миграций, ${m3.scenario.testRepeat * BASE_TEST_COUNT} тестов` +
+        `${m3.scenario.migrationCount} миграций, ${m3.scenario.classScale * BASE_TEST_COUNT} тестов` +
         ` | Ось X: MaxParallelThreads`;
 
       if (m1) document.getElementById('subtitle-timing').textContent =
-        `${m1.scenario.testRepeat * BASE_TEST_COUNT} тестов, потоков=${m1.scenario.maxParallelThreads}` +
+        `${m1.scenario.classScale * BASE_TEST_COUNT} тестов, потоков=${m1.scenario.maxParallelThreads}` +
         ` | Слои: миграции / сброс данных / бизнес-логика`;
     })();
 
@@ -129,7 +129,7 @@
     }
 
     buildChart('chart-migrations', 'migrations', 'migrationCount',     'Количество миграций');
-    buildChart('chart-scale',      'scale',      'testRepeat',          'Количество тестов', x => x * BASE_TEST_COUNT);
+    buildChart('chart-scale',      'scale',      'classScale',          'Количество тестов', x => x * BASE_TEST_COUNT);
     buildChart('chart-parallelism','parallelism', 'maxParallelThreads', 'MaxParallelThreads');
 
     (function buildTimingChart() {

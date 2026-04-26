@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Testcontainers.Reviews;
+﻿namespace FastIntegrationTests.Tests.Testcontainers.Reviews;
 
 /// <summary>
 /// Тесты сервисного уровня: GetAll, GetById, Create для ReviewService.
@@ -30,18 +30,16 @@ public class ReviewServiceCrContainerTests : IAsyncLifetime, IClassFixture<Conta
         await _context.DisposeAsync();
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenNoReviews_ReturnsEmptyList(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenNoReviews_ReturnsEmptyList()
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenReviewsExist_ReturnsAllReviews(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenReviewsExist_ReturnsAllReviews()
     {
         await Sut.CreateAsync(new CreateReviewRequest { Title = "Отлично", Body = "Всё понравилось", Rating = 5 });
         await Sut.CreateAsync(new CreateReviewRequest { Title = "Неплохо", Body = "В целом хорошо", Rating = 4 });
@@ -51,9 +49,8 @@ public class ReviewServiceCrContainerTests : IAsyncLifetime, IClassFixture<Conta
         Assert.Equal(2, result.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenExists_ReturnsReview(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenExists_ReturnsReview()
     {
         var created = await Sut.CreateAsync(new CreateReviewRequest { Title = "Хороший товар", Body = "Рекомендую", Rating = 4 });
 
@@ -65,16 +62,14 @@ public class ReviewServiceCrContainerTests : IAsyncLifetime, IClassFixture<Conta
         Assert.Equal(ReviewStatus.Pending, result.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(Guid.NewGuid()));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_PersistsAndReturns(int _)
+    [Fact]
+    public async Task CreateAsync_PersistsAndReturns()
     {
         var result = await Sut.CreateAsync(new CreateReviewRequest { Title = "Супер", Body = "Лучший товар", Rating = 5 });
 
@@ -88,9 +83,8 @@ public class ReviewServiceCrContainerTests : IAsyncLifetime, IClassFixture<Conta
     /// <summary>
     /// Создаёт несколько отзывов, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateReviewRequest { Title = "Отлично", Body = "Всё понравилось", Rating = 5 });
         var b = await Sut.CreateAsync(new CreateReviewRequest { Title = "Хорошо", Body = "В целом ок", Rating = 4 });
@@ -114,9 +108,8 @@ public class ReviewServiceCrContainerTests : IAsyncLifetime, IClassFixture<Conta
     /// <summary>
     /// Создаёт два отзыва, один одобряет, второй отклоняет, проверяет статусы, удаляет первый.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect(int _)
+    [Fact]
+    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect()
     {
         var toApprove = await Sut.CreateAsync(new CreateReviewRequest { Title = "Одобрить", Body = "Хороший отзыв", Rating = 5 });
         var toReject = await Sut.CreateAsync(new CreateReviewRequest { Title = "Отклонить", Body = "Плохой отзыв", Rating = 1 });

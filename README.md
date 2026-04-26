@@ -143,7 +143,7 @@ New → Confirmed → Shipped → Completed
 Docker должен быть запущен. Контейнеры поднимаются автоматически через Testcontainers.
 
 ```bash
-# Все тесты (три подхода вместе, TEST_REPEAT=1)
+# Все тесты (три подхода вместе)
 dotnet test
 
 # Один подход
@@ -160,13 +160,13 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 ### PowerShell скрипты (с замером времени)
 
 ```powershell
-# По умолчанию: 5 повторов, 4 потока
+# По умолчанию: 4 потока
 .\run-integresql.ps1
 .\run-respawn.ps1
 .\run-testcontainers.ps1
 
 # Переопределить параметры
-.\run-integresql.ps1 -Repeat 20 -Threads 8
+.\run-integresql.ps1 -Threads 8
 ```
 
 ### Сравнение подходов
@@ -188,8 +188,8 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 # Полный прогон с дефолтными параметрами (Docker должен быть запущен, ~1–2 часа)
 dotnet run --project tools/BenchmarkRunner
 
-# Переопределить дефолтные потоки и повторы
-dotnet run --project tools/BenchmarkRunner -- --threads 4 --repeat 10
+# Переопределить дефолтные потоки и масштаб классов
+dotnet run --project tools/BenchmarkRunner -- --threads 4 --scale 12
 
 # Открыть отчёт
 start benchmark-results/report.html   # Windows
@@ -198,16 +198,16 @@ open benchmark-results/report.html    # macOS
 
 | Аргумент | По умолчанию | Где применяется |
 |----------|-------------|-----------------|
+| `--scale N` / `-s N` | 12 | Сценарии 1 и 3 (масштаб классов) |
 | `--threads N` / `-t N` | 8 | Сценарии 1 и 2 (где потоки не варьируются) |
-| `--repeat N` / `-r N` | 38 | Сценарии 1 и 3 (где повторы не варьируются) |
 
 ### Сценарии бенчмарка
 
 | Сценарий | Что варьируется | Что фиксируется |
 |----------|-----------------|-----------------|
-| 1 — Влияние миграций | 17 / 42 / 67 / 92 / 117 миграций | `--repeat`, `--threads` |
-| 2 — Масштаб тестов | TEST_REPEAT: 1, 5, 10, 20, 50 | `--threads`, 17 миграций |
-| 3 — Параллелизм | потоков: 1, 2, 4, 8 | `--repeat`, 17 миграций |
+| 1 — Влияние миграций | 17 / 42 / 67 / 92 / 117 миграций | `--scale`, `--threads` |
+| 2 — Масштаб тестов | ClassScale: 1, 5, 10, 20, 50 | `--threads`, 17 миграций |
+| 3 — Параллелизм | потоков: 1, 2, 4, 8 | `--scale`, 17 миграций |
 
 Перед Сценарием 1 выполняется warmup-прогон (результат не сохраняется). Фейковые миграции генерируются и удаляются автоматически.
 
@@ -222,7 +222,7 @@ src/
 └── FastIntegrationTests.WebApi/         # ASP.NET Core: контроллеры, Program.cs
 
 tests/
-├── FastIntegrationTests.Tests.Shared/   # Общая инфраструктура: TestRepeat, TestWebApplicationFactory
+├── FastIntegrationTests.Tests.Shared/   # Общая инфраструктура: TestWebApplicationFactory
 ├── FastIntegrationTests.Tests.IntegreSQL/   # 165 тестов: Categories/, Customers/, Discounts/,
 │                                            #             Orders/, Products/, Reviews/, Suppliers/
 ├── FastIntegrationTests.Tests.Respawn/      # 165 тестов: те же 7 папок

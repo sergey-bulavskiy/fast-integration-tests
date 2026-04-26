@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Orders;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Orders;
 
 /// <summary>
 /// Тесты HTTP-уровня: статусные переходы и сквозные сценарии для OrdersController.
@@ -6,9 +6,8 @@ namespace FastIntegrationTests.Tests.IntegreSQL.Orders;
 /// </summary>
 public class OrdersApiUdTests : ComponentTestBase
 {
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Confirm_WhenOrderIsNew_Returns200WithConfirmedStatus(int _)
+    [Fact]
+    public async Task Confirm_WhenOrderIsNew_Returns200WithConfirmedStatus()
     {
         var order = await CreateOrderWithProductAsync();
 
@@ -19,9 +18,8 @@ public class OrdersApiUdTests : ComponentTestBase
         Assert.Equal(OrderStatus.Confirmed, confirmed!.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Ship_WhenOrderIsConfirmed_Returns200WithShippedStatus(int _)
+    [Fact]
+    public async Task Ship_WhenOrderIsConfirmed_Returns200WithShippedStatus()
     {
         var order = await CreateOrderWithProductAsync();
         await Client.PostAsync($"/api/orders/{order.Id}/confirm", null);
@@ -33,9 +31,8 @@ public class OrdersApiUdTests : ComponentTestBase
         Assert.Equal(OrderStatus.Shipped, shipped!.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Complete_WhenOrderIsShipped_Returns200WithCompletedStatus(int _)
+    [Fact]
+    public async Task Complete_WhenOrderIsShipped_Returns200WithCompletedStatus()
     {
         var order = await CreateOrderWithProductAsync();
         await Client.PostAsync($"/api/orders/{order.Id}/confirm", null);
@@ -48,9 +45,8 @@ public class OrdersApiUdTests : ComponentTestBase
         Assert.Equal(OrderStatus.Completed, completed!.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Cancel_WhenOrderIsNew_Returns200WithCancelledStatus(int _)
+    [Fact]
+    public async Task Cancel_WhenOrderIsNew_Returns200WithCancelledStatus()
     {
         var order = await CreateOrderWithProductAsync();
 
@@ -61,9 +57,8 @@ public class OrdersApiUdTests : ComponentTestBase
         Assert.Equal(OrderStatus.Cancelled, cancelled!.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Cancel_WhenOrderIsConfirmed_Returns200WithCancelledStatus(int _)
+    [Fact]
+    public async Task Cancel_WhenOrderIsConfirmed_Returns200WithCancelledStatus()
     {
         var order = await CreateOrderWithProductAsync();
         await Client.PostAsync($"/api/orders/{order.Id}/confirm", null);
@@ -75,18 +70,16 @@ public class OrdersApiUdTests : ComponentTestBase
         Assert.Equal(OrderStatus.Cancelled, cancelled!.Status);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Confirm_WhenOrderNotFound_Returns404(int _)
+    [Fact]
+    public async Task Confirm_WhenOrderNotFound_Returns404()
     {
         var response = await Client.PostAsync("/api/orders/999/confirm", null);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Ship_WhenOrderIsNew_InvalidTransition_Returns400(int _)
+    [Fact]
+    public async Task Ship_WhenOrderIsNew_InvalidTransition_Returns400()
     {
         var order = await CreateOrderWithProductAsync();
 
@@ -96,9 +89,8 @@ public class OrdersApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Cancel_WhenOrderIsShipped_InvalidTransition_Returns400(int _)
+    [Fact]
+    public async Task Cancel_WhenOrderIsShipped_InvalidTransition_Returns400()
     {
         var order = await CreateOrderWithProductAsync();
         await Client.PostAsync($"/api/orders/{order.Id}/confirm", null);
@@ -110,9 +102,8 @@ public class OrdersApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateThenGetById_OrderItemsMatchRequest(int _)
+    [Fact]
+    public async Task CreateThenGetById_OrderItemsMatchRequest()
     {
         var product = await CreateProductAsync("Видеокарта", 40_000m);
         var createRequest = new CreateOrderRequest
@@ -133,9 +124,8 @@ public class OrdersApiUdTests : ComponentTestBase
         Assert.Equal(40_000m, fetched.Items[0].UnitPrice);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task FullLifecycle_CreateConfirmShipCompleteGetById_StatusIsCompleted(int _)
+    [Fact]
+    public async Task FullLifecycle_CreateConfirmShipCompleteGetById_StatusIsCompleted()
     {
         var order = await CreateOrderWithProductAsync();
 
@@ -153,9 +143,8 @@ public class OrdersApiUdTests : ComponentTestBase
     /// <summary>
     /// Создаёт заказ с тремя позициями через API — проверяет итоговую сумму и состав.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task MultiItemOrder_TotalAmountAndItemsCorrect(int _)
+    [Fact]
+    public async Task MultiItemOrder_TotalAmountAndItemsCorrect()
     {
         var p1 = await CreateProductAsync("Телефон", 30_000m);
         var p2 = await CreateProductAsync("Чехол", 500m);
@@ -195,9 +184,8 @@ public class OrdersApiUdTests : ComponentTestBase
     /// <summary>
     /// Создаёт заказ с тремя позициями, проводит полный lifecycle через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect(int _)
+    [Fact]
+    public async Task MultiItemLifecycle_FullPath_TotalAmountAndStatusCorrect()
     {
         var p1 = await CreateProductAsync("Ноутбук", 50_000m);
         var p2 = await CreateProductAsync("Мышь", 2_000m);

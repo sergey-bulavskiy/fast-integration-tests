@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Products;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Products;
 
 /// <summary>
 /// Тесты сервисного уровня: GetAll, GetById, Create для ProductService.
@@ -15,18 +15,16 @@ public class ProductServiceCrTests : AppServiceTestBase
         Sut = new ProductService(new ProductRepository(Context));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenNoProducts_ReturnsEmptyList(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenNoProducts_ReturnsEmptyList()
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenProductsExist_ReturnsAllProducts(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenProductsExist_ReturnsAllProducts()
     {
         await Sut.CreateAsync(new CreateProductRequest { Name = "Товар 1", Description = "Описание 1", Price = 100m });
         await Sut.CreateAsync(new CreateProductRequest { Name = "Товар 2", Description = "Описание 2", Price = 200m });
@@ -36,9 +34,8 @@ public class ProductServiceCrTests : AppServiceTestBase
         Assert.Equal(2, result.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenProductExists_ReturnsProduct(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenProductExists_ReturnsProduct()
     {
         var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Ноутбук", Description = "Core i9", Price = 50_000m });
 
@@ -50,16 +47,14 @@ public class ProductServiceCrTests : AppServiceTestBase
         Assert.Equal(50_000m, result.Price);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenProductNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenProductNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(999));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_PersistsProductAndReturnsWithAssignedId(int _)
+    [Fact]
+    public async Task CreateAsync_PersistsProductAndReturnsWithAssignedId()
     {
         var request = new CreateProductRequest { Name = "Мышь", Description = "Беспроводная", Price = 2_500m };
 
@@ -71,9 +66,8 @@ public class ProductServiceCrTests : AppServiceTestBase
         Assert.Equal(2_500m, result.Price);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_SetsCreatedAtAutomatically(int _)
+    [Fact]
+    public async Task CreateAsync_SetsCreatedAtAutomatically()
     {
         var before = DateTime.UtcNow.AddSeconds(-1);
 
@@ -86,9 +80,8 @@ public class ProductServiceCrTests : AppServiceTestBase
     /// <summary>
     /// Создаёт несколько товаров, читает через GetAll и GetById — проверяет согласованность данных.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар А", Price = 100m });
         var b = await Sut.CreateAsync(new CreateProductRequest { Name = "Товар Б", Price = 200m });
@@ -112,9 +105,8 @@ public class ProductServiceCrTests : AppServiceTestBase
     /// <summary>
     /// Создаёт товар, обновляет поля, проверяет персистентность, удаляет — полный цикл записи.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist()
     {
         var created = await Sut.CreateAsync(new CreateProductRequest { Name = "Монитор", Price = 20_000m });
         var updated = await Sut.UpdateAsync(created.Id, new UpdateProductRequest { Name = "Монитор 4K", Description = "UHD", Price = 25_000m });

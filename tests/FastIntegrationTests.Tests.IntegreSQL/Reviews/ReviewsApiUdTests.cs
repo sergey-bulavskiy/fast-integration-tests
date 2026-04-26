@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Reviews;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Reviews;
 
 /// <summary>
 /// Тесты HTTP-уровня: Create, Delete, Approve, Reject для ReviewsController.
@@ -6,9 +6,8 @@ namespace FastIntegrationTests.Tests.IntegreSQL.Reviews;
 /// </summary>
 public class ReviewsApiUdTests : ComponentTestBase
 {
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_ValidRequest_Returns201WithLocationHeader(int _)
+    [Fact]
+    public async Task Create_ValidRequest_Returns201WithLocationHeader()
     {
         var request = new CreateReviewRequest { Title = "Отлично", Body = "Всё понравилось", Rating = 5 };
 
@@ -21,9 +20,8 @@ public class ReviewsApiUdTests : ComponentTestBase
         Assert.Equal("Отлично", item.Title);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Create_WhenInvalidRating_Returns422(int _)
+    [Fact]
+    public async Task Create_WhenInvalidRating_Returns422()
     {
         var response = await Client.PostAsJsonAsync("/api/reviews",
             new CreateReviewRequest { Title = "Плохо", Body = "Текст", Rating = 6 });
@@ -31,9 +29,8 @@ public class ReviewsApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Delete_WhenExists_Returns204(int _)
+    [Fact]
+    public async Task Delete_WhenExists_Returns204()
     {
         var created = await CreateReviewAsync("Удаляемый", 3);
 
@@ -42,9 +39,8 @@ public class ReviewsApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Approve_WhenPending_Returns204(int _)
+    [Fact]
+    public async Task Approve_WhenPending_Returns204()
     {
         var created = await CreateReviewAsync("На модерации", 4);
 
@@ -53,9 +49,8 @@ public class ReviewsApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Approve_WhenNotPending_Returns422(int _)
+    [Fact]
+    public async Task Approve_WhenNotPending_Returns422()
     {
         var created = await CreateReviewAsync("Одобренный", 4);
         await Client.PostAsync($"/api/reviews/{created.Id}/approve", null);
@@ -65,9 +60,8 @@ public class ReviewsApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Reject_WhenPending_Returns204(int _)
+    [Fact]
+    public async Task Reject_WhenPending_Returns204()
     {
         var created = await CreateReviewAsync("Спам", 1);
 
@@ -76,9 +70,8 @@ public class ReviewsApiUdTests : ComponentTestBase
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task Reject_WhenNotPending_Returns422(int _)
+    [Fact]
+    public async Task Reject_WhenNotPending_Returns422()
     {
         var created = await CreateReviewAsync("Отклонённый", 1);
         await Client.PostAsync($"/api/reviews/{created.Id}/reject", null);
@@ -91,9 +84,8 @@ public class ReviewsApiUdTests : ComponentTestBase
     /// <summary>
     /// Создаёт несколько отзывов через API, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateReviewAsync("Отлично", 5);
         var b = await CreateReviewAsync("Хорошо", 4);
@@ -119,9 +111,8 @@ public class ReviewsApiUdTests : ComponentTestBase
     /// <summary>
     /// Создаёт два отзыва, один одобряет, второй отклоняет через API, первый удаляет.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect(int _)
+    [Fact]
+    public async Task CreateApproveReject_ThenDelete_LifecycleCorrect()
     {
         var toApprove = await CreateReviewAsync("Одобрить", 5);
         var toReject = await CreateReviewAsync("Отклонить", 1);

@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.Respawn.Suppliers;
+﻿namespace FastIntegrationTests.Tests.Respawn.Suppliers;
 
 /// <summary>
 /// Тесты сервисного уровня: GetAll, GetById, Create для SupplierService.
@@ -21,18 +21,16 @@ public class SupplierServiceCrRespawnTests : RespawnServiceTestBase
         Sut = new SupplierService(new SupplierRepository(Context));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenNoSuppliers_ReturnsEmptyList(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenNoSuppliers_ReturnsEmptyList()
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenSuppliersExist_ReturnsAllSuppliers(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenSuppliersExist_ReturnsAllSuppliers()
     {
         await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Альфа", ContactEmail = "alpha@vendor.com", Country = "Россия" });
         await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Бета", ContactEmail = "beta@vendor.com", Country = "Беларусь" });
@@ -42,9 +40,8 @@ public class SupplierServiceCrRespawnTests : RespawnServiceTestBase
         Assert.Equal(2, result.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenExists_ReturnsSupplier(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenExists_ReturnsSupplier()
     {
         var created = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Гамма", ContactEmail = "gamma@vendor.com", Country = "Казахстан" });
 
@@ -56,16 +53,14 @@ public class SupplierServiceCrRespawnTests : RespawnServiceTestBase
         Assert.Equal("Казахстан", result.Country);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(Guid.NewGuid()));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_PersistsAndReturns(int _)
+    [Fact]
+    public async Task CreateAsync_PersistsAndReturns()
     {
         var result = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Дельта", ContactEmail = "delta@vendor.com", Country = "Россия" });
 
@@ -79,9 +74,8 @@ public class SupplierServiceCrRespawnTests : RespawnServiceTestBase
     /// <summary>
     /// Создаёт несколько поставщиков, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Альфа", ContactEmail = "alpha@example.com", Country = "Россия" });
         var b = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ИП Бета", ContactEmail = "beta@example.com", Country = "Беларусь" });
@@ -105,9 +99,8 @@ public class SupplierServiceCrRespawnTests : RespawnServiceTestBase
     /// <summary>
     /// Создаёт поставщика, обновляет поля, деактивирует, активирует — проверяет все переходы.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDeactivateActivate_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDeactivateActivate_AllPersist()
     {
         var created = await Sut.CreateAsync(new CreateSupplierRequest { Name = "ООО Старт", ContactEmail = "start@example.com", Country = "Россия" });
         Assert.True(created.IsActive);

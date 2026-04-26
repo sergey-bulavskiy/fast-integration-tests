@@ -1,5 +1,7 @@
 # Benchmark Runner — Design Spec
 
+> **Примечание:** Механизм `TestRepeat` заменён на `ClassScale` — см. `docs/superpowers/specs/2026-04-26-class-scale-scenario2-design.md`.
+
 **Дата:** 2026-04-21  
 **Цель:** сравнить три подхода к изоляции интеграционных тестов (IntegreSQL, Respawn, Testcontainers) по трём измерениям и сгенерировать HTML-отчёт для конференции / статьи.
 

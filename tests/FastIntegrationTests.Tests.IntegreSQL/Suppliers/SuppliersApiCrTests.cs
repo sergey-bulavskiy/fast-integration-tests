@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Suppliers;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Suppliers;
 
 /// <summary>
 /// Тесты HTTP-уровня: GetAll, GetById для SuppliersController.
@@ -6,9 +6,8 @@ namespace FastIntegrationTests.Tests.IntegreSQL.Suppliers;
 /// </summary>
 public class SuppliersApiCrTests : ComponentTestBase
 {
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray(int _)
+    [Fact]
+    public async Task GetAll_WhenEmpty_Returns200WithEmptyArray()
     {
         var response = await Client.GetAsync("/api/suppliers");
 
@@ -17,9 +16,8 @@ public class SuppliersApiCrTests : ComponentTestBase
         Assert.Empty(items!);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAll_WhenExist_Returns200WithSuppliers(int _)
+    [Fact]
+    public async Task GetAll_WhenExist_Returns200WithSuppliers()
     {
         await CreateSupplierAsync("ООО Альфа", "alpha@vendor.com");
         await CreateSupplierAsync("ООО Бета", "beta@vendor.com");
@@ -31,9 +29,8 @@ public class SuppliersApiCrTests : ComponentTestBase
         Assert.Equal(2, items!.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenExists_Returns200WithSupplier(int _)
+    [Fact]
+    public async Task GetById_WhenExists_Returns200WithSupplier()
     {
         var created = await CreateSupplierAsync("ООО Гамма", "gamma@vendor.com");
 
@@ -45,9 +42,8 @@ public class SuppliersApiCrTests : ComponentTestBase
         Assert.Equal("ООО Гамма", item.Name);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetById_WhenNotFound_Returns404(int _)
+    [Fact]
+    public async Task GetById_WhenNotFound_Returns404()
     {
         var response = await Client.GetAsync($"/api/suppliers/{Guid.NewGuid()}");
 
@@ -57,9 +53,8 @@ public class SuppliersApiCrTests : ComponentTestBase
     /// <summary>
     /// Создаёт несколько поставщиков через API, проверяет GetAll и GetById каждого.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await CreateSupplierAsync("ООО Альфа", "alpha@example.com");
         var b = await CreateSupplierAsync("ИП Бета", "beta@example.com");
@@ -84,9 +79,8 @@ public class SuppliersApiCrTests : ComponentTestBase
     /// <summary>
     /// Создаёт поставщика, обновляет, деактивирует, активирует через API.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDeactivateActivate_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDeactivateActivate_AllPersist()
     {
         var created = await CreateSupplierAsync("ООО Старт", "start@example.com");
 

@@ -1,4 +1,4 @@
-namespace FastIntegrationTests.Tests.IntegreSQL.Categories;
+﻿namespace FastIntegrationTests.Tests.IntegreSQL.Categories;
 
 /// <summary>
 /// Тесты сервисного уровня: GetAll, GetById, Create для CategoryService.
@@ -15,18 +15,16 @@ public class CategoryServiceCrTests : AppServiceTestBase
         Sut = new CategoryService(new CategoryRepository(Context));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenNoCategories_ReturnsEmptyList(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenNoCategories_ReturnsEmptyList()
     {
         var result = await Sut.GetAllAsync();
 
         Assert.Empty(result);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetAllAsync_WhenCategoriesExist_ReturnsAllCategories(int _)
+    [Fact]
+    public async Task GetAllAsync_WhenCategoriesExist_ReturnsAllCategories()
     {
         await Sut.CreateAsync(new CreateCategoryRequest { Name = "Электроника", Description = "Гаджеты" });
         await Sut.CreateAsync(new CreateCategoryRequest { Name = "Одежда" });
@@ -36,9 +34,8 @@ public class CategoryServiceCrTests : AppServiceTestBase
         Assert.Equal(2, result.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenExists_ReturnsCategory(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenExists_ReturnsCategory()
     {
         var created = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Книги", Description = "Художественная литература" });
 
@@ -49,16 +46,14 @@ public class CategoryServiceCrTests : AppServiceTestBase
         Assert.Equal("Художественная литература", result.Description);
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException(int _)
+    [Fact]
+    public async Task GetByIdAsync_WhenNotFound_ThrowsNotFoundException()
     {
         await Assert.ThrowsAsync<NotFoundException>(() => Sut.GetByIdAsync(Guid.NewGuid()));
     }
 
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateAsync_PersistsAndReturns(int _)
+    [Fact]
+    public async Task CreateAsync_PersistsAndReturns()
     {
         var result = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Спорт", Description = "Инвентарь" });
 
@@ -71,9 +66,8 @@ public class CategoryServiceCrTests : AppServiceTestBase
     /// <summary>
     /// Создаёт несколько категорий, проверяет GetAll и GetById каждой.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData(int _)
+    [Fact]
+    public async Task CreateMultiple_GetAll_GetByIdEach_ReturnsConsistentData()
     {
         var a = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Электроника", Description = "Гаджеты" });
         var b = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Одежда" });
@@ -97,9 +91,8 @@ public class CategoryServiceCrTests : AppServiceTestBase
     /// <summary>
     /// Создаёт категорию, обновляет, проверяет персистентность, удаляет.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(TestRepeat.Data), MemberType = typeof(TestRepeat))]
-    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist(int _)
+    [Fact]
+    public async Task CreateUpdateDelete_VerifyEachStep_AllPersist()
     {
         var created = await Sut.CreateAsync(new CreateCategoryRequest { Name = "Спорт", Description = "Инвентарь" });
         var updated = await Sut.UpdateAsync(created.Id, new UpdateCategoryRequest { Name = "Спорт и фитнес", Description = "Тренажёры и инвентарь" });
