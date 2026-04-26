@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Рабочий процесс
+
+- Фича-ветки мержатся в `main` через **squash merge** (`git merge --squash`): один коммит на фичу.
+- `docs/benchmark-issues/` — локальные файлы, не отслеживаются git (в `.gitignore`).
+
 ## Инструменты разработки
 
 При работе с C#-кодом в этом репозитории — всегда использовать LSP для C# и включать его по умолчанию в начале сессии.
