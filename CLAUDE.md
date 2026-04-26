@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Инструменты разработки
+
+При работе с C#-кодом в этом репозитории — всегда использовать LSP для C# и включать его по умолчанию в начале сессии.
+
+**Исходники IntegreSQL.EF** (обёртка над IntegreSQL для EF Core): https://github.com/mccsoft/IntegreSql.EF
+
 ## Команды разработки
 
 ```bash
