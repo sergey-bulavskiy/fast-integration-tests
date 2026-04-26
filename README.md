@@ -191,9 +191,9 @@ dotnet run --project tools/BenchmarkRunner
 # Переопределить дефолтные потоки и масштаб классов
 dotnet run --project tools/BenchmarkRunner -- --threads 4 --scale 12
 
-# Открыть отчёт
-start benchmark-results/report.html   # Windows
-open benchmark-results/report.html    # macOS
+# Открыть отчёт (runner выводит точный путь после завершения)
+start benchmark-results/report-20260425-143022.html   # Windows (пример)
+open benchmark-results/report-20260425-143022.html    # macOS (пример)
 ```
 
 | Аргумент | По умолчанию | Где применяется |
@@ -236,6 +236,6 @@ tools/
     └── Report/                          # ReportGenerator + Chart.js HTML шаблон
 
 benchmark-results/                       # Gitignored, создаётся при запуске бенчмарка
-├── report.html
-└── results.json
+├── report-<timestamp>.html              # Точный путь runner выводит после завершения
+└── results-<timestamp>.json
 ```
