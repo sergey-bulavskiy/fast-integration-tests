@@ -19,4 +19,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Migrations\__hidden\**" />
+  </ItemGroup>
+
 </Project>

@@ -497,3 +497,5 @@ docs/benchmark-issues/
 **/Migrations/2999*
 
 .superpowers/
+
+**/Migrations/__hidden/
