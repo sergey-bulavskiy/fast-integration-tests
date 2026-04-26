@@ -31,7 +31,8 @@ var classScaleManager = new ClassScaleManager(repoRoot);
 var reportGenerator  = new ReportGenerator(repoRoot);
 var results          = new List<BenchmarkResult>();
 
-const int BaseMigrations   = 17;
+const int BaseMigrations   = 17;   // реальных миграций в репозитории
+const int MaxMigrations    = 117;  // с benchmark-миграциями — базовое состояние бенчмарка
 var approaches             = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
 var migrationCounts        = new[] { 17, 42, 67, 92, 117 };
 var classScaleFactors      = new[] { 1, 5, 10, 20, 50 };
@@ -47,8 +48,8 @@ Console.WriteLine("\nDocker must be running. Full run takes ~1-2 hours.");
 Console.WriteLine("Press Enter to start, Ctrl+C to cancel...");
 Console.ReadLine();
 
-// Убрать фейковые миграции и scale-классы, которые могли остаться от прерванного прогона
-migrationManager.RemoveFakeMigrations();
+// Восстановить скрытые миграции и убрать scale-классы после возможного прерванного прогона
+migrationManager.RestoreHiddenMigrations();
 classScaleManager.RemoveScaleClasses();
 
 // Первичная сборка
@@ -60,7 +61,7 @@ try
     Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Warmup (не входит в отчёт) ═══");
     foreach (var approach in approaches)
     {
-        var warmup = runner.Warmup(new BenchmarkScenario(approach, "warmup", BaseMigrations, defaultThreads));
+        var warmup = runner.Warmup(new BenchmarkScenario(approach, "warmup", MaxMigrations, defaultThreads));
         if (!warmup.Success)
             throw new BenchmarkAbortedException();
     }
@@ -73,12 +74,12 @@ try
     {
         foreach (var migrationCount in migrationCounts)
         {
-            var fakesToAdd = migrationCount - BaseMigrations;
+            var toHide = MaxMigrations - migrationCount;
             try
             {
-                if (fakesToAdd > 0)
+                if (toHide > 0)
                 {
-                    migrationManager.AddFakeMigrations(fakesToAdd);
+                    migrationManager.HideMigrations(toHide);
                     runner.Build();
                 }
                 foreach (var approach in approaches)
@@ -86,9 +87,9 @@ try
             }
             finally
             {
-                if (fakesToAdd > 0)
+                if (toHide > 0)
                 {
-                    migrationManager.RemoveFakeMigrations();
+                    migrationManager.RestoreHiddenMigrations();
                     runner.Build();
                 }
             }
@@ -112,7 +113,7 @@ try
                 runner.Build();
             }
             foreach (var approach in approaches)
-                RunOrAbort(new BenchmarkScenario(approach, "scale", BaseMigrations, defaultThreads, scale));
+                RunOrAbort(new BenchmarkScenario(approach, "scale", MaxMigrations, defaultThreads, scale));
         }
         finally
         {
@@ -132,7 +133,7 @@ try
     {
         foreach (var parallelism in parallelismThreads)
             foreach (var approach in approaches)
-                RunOrAbort(new BenchmarkScenario(approach, "parallelism", BaseMigrations, parallelism, defaultClassScale));
+                RunOrAbort(new BenchmarkScenario(approach, "parallelism", MaxMigrations, parallelism, defaultClassScale));
     }
     finally
     {
