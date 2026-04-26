@@ -170,6 +170,7 @@ Subtitle Сценария 2 (`migrationCount` + `maxParallelThreads`) `testRepea
 |---|---|
 | `tools/BenchmarkRunner/Scale/ClassScaleManager.cs` | новый |
 | `tools/BenchmarkRunner/Models/BenchmarkScenario.cs` | `TestRepeat` → `ClassScale` |
+| `tools/BenchmarkRunner/Runner/TestRunner.cs` | убрать передачу `TEST_REPEAT` env var, `r={TestRepeat}` → `s={ClassScale}` в лог-строках |
 | `tools/BenchmarkRunner/Program.cs` | все сценарии + `--repeat`→`--scale` |
 | `tools/BenchmarkRunner/Report/report-template.html` | `testRepeat` → `classScale` (4 места) |
 | `tests/FastIntegrationTests.Tests.Shared/TestRepeat.cs` | удалить |
