@@ -176,6 +176,8 @@ Subtitle Сценария 2 (`migrationCount` + `maxParallelThreads`) `testRepea
 | 84 тест-класса (28 × 3 проекта) | `[Theory]+MemberData+int _` → `[Fact]` |
 | `CLAUDE.md` | обновить: `--repeat`→`--scale`, убрать `TEST_REPEAT` из команд запуска тестов, обновить таблицу аргументов BenchmarkRunner |
 | `README.md` | `--repeat`→`--scale`, убрать `TEST_REPEAT` из примеров, обновить таблицу сценариев (Сценарий 2: «ClassScale: 1,5,10,20,50» вместо «TEST_REPEAT») |
+| `run-integresql.ps1`, `run-respawn.ps1`, `run-testcontainers.ps1` | убрать `$env:TEST_REPEAT = $Repeat` и параметр `-Repeat` (TEST_REPEAT больше не используется в тестах) |
+| `docs/benchmark-issues/03-scenario2-wrong-migration-count.md` | inline-код содержит `TestRepeat:` — пометить как исторический документ |
 | `docs/benchmark-issues/05-test-repeat-vs-real-classes.md` | пометить как решённое (добавить заголовок `## Решение` со ссылкой на этот спек) |
 | `docs/superpowers/specs/2026-04-21-benchmark-design.md` | упомянуть замену TEST_REPEAT на ClassScale |
 | `docs/superpowers/specs/2026-04-25-benchmark-timestamps-testcount-design.md` | убрать/заменить упоминания `testRepeat` |
