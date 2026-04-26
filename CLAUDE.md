@@ -157,7 +157,7 @@ dotnet run --project tools/BenchmarkRunner -- -t 16 -s 50
 
 После применения всех 100 миграций схема остаётся чистой (последняя чётная удаляет таблицу предыдущей нечётной). Год `2099` гарантирует сортировку после любых реальных миграций.
 
-**Scenario 1** (влияние числа миграций) скрывает лишние benchmark-миграции в `Migrations/__hidden/` и восстанавливает их после каждой точки данных. Scenarios 2 и 3 работают со всеми 117 миграциями без манипуляций.
+**Сценарий 1** (влияние числа миграций) скрывает лишние benchmark-миграции в `Migrations/__hidden/` и восстанавливает их после каждой точки данных. Сценарии 2 и 3 работают со всеми 117 миграциями без манипуляций.
 
 ### Выходные файлы
 
@@ -173,7 +173,7 @@ tools/BenchmarkRunner/
 ├── Program.cs                  — оркестрация трёх сценариев
 ├── Models/                     — BenchmarkScenario, BenchmarkResult, BenchmarkReport
 ├── Runner/TestRunner.cs        — запуск dotnet test через Process, замер времени
-├── Migrations/MigrationManager.cs — запись/удаление фейковых .cs миграций
+├── Migrations/MigrationManager.cs — скрытие/восстановление benchmark-миграций для Сценария 1
 └── Report/
     ├── ReportGenerator.cs      — сериализация JSON, инлайн в HTML шаблон
     └── report-template.html    — Chart.js шаблон с плейсхолдером /*INJECT_JSON*/

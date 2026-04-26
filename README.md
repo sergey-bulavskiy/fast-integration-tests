@@ -218,7 +218,7 @@ open benchmark-results/report.html    # macOS
 ```
 src/
 ├── FastIntegrationTests.Application/    # Домен: сущности, DTO, сервисы, исключения
-├── FastIntegrationTests.Infrastructure/ # EF Core: DbContext, репозитории, миграции (17 шт.)
+├── FastIntegrationTests.Infrastructure/ # EF Core: DbContext, репозитории, миграции (117 шт.: 17 рабочих + 100 benchmark)
 └── FastIntegrationTests.WebApi/         # ASP.NET Core: контроллеры, Program.cs
 
 tests/
@@ -232,7 +232,7 @@ tools/
 └── BenchmarkRunner/                     # Консольный инструмент бенчмарка
     ├── Models/                          # BenchmarkScenario, BenchmarkResult, BenchmarkReport
     ├── Runner/                          # TestRunner — запуск dotnet test через Process
-    ├── Migrations/                      # MigrationManager — генерация фейковых миграций
+    ├── Migrations/                      # MigrationManager — скрытие/восстановление benchmark-миграций для Сценария 1
     └── Report/                          # ReportGenerator + Chart.js HTML шаблон
 
 benchmark-results/                       # Gitignored, создаётся при запуске бенчмарка
