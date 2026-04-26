@@ -174,7 +174,12 @@ Subtitle Сценария 2 (`migrationCount` + `maxParallelThreads`) `testRepea
 | `tools/BenchmarkRunner/Report/report-template.html` | `testRepeat` → `classScale` (4 места) |
 | `tests/FastIntegrationTests.Tests.Shared/TestRepeat.cs` | удалить |
 | 84 тест-класса (28 × 3 проекта) | `[Theory]+MemberData+int _` → `[Fact]` |
-| `CLAUDE.md` | обновить документацию CLI-аргументов |
+| `CLAUDE.md` | обновить: `--repeat`→`--scale`, убрать `TEST_REPEAT` из команд запуска тестов, обновить таблицу аргументов BenchmarkRunner |
+| `docs/benchmark-issues/05-test-repeat-vs-real-classes.md` | пометить как решённое (добавить заголовок `## Решение` со ссылкой на этот спек) |
+| `docs/superpowers/specs/2026-04-21-benchmark-design.md` | упомянуть замену TEST_REPEAT на ClassScale |
+| `docs/superpowers/specs/2026-04-25-benchmark-timestamps-testcount-design.md` | убрать/заменить упоминания `testRepeat` |
+| `docs/superpowers/specs/2026-04-25-migration-timing-design.md` | то же |
+| `docs/superpowers/specs/2026-04-25-split-test-projects-design.md` | то же |
 
 ## Тест-план
 
