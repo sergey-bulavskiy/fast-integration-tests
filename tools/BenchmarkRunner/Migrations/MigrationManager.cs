@@ -1,139 +1,65 @@
 // tools/BenchmarkRunner/Migrations/MigrationManager.cs
 namespace BenchmarkRunner.Migrations;
 
-/// <summary>Добавляет и удаляет фейковые .cs файлы миграций для бенчмарка.</summary>
+/// <summary>Управляет benchmark-миграциями: скрывает часть для Scenario 1, восстанавливает после.</summary>
 public class MigrationManager
 {
     private readonly string _migrationsPath;
-    private const string FakePrefix = "Benchmark_Fake_";
+    private readonly string _hiddenPath;
 
     /// <summary>Инициализирует менеджер с корневой директорией репозитория.</summary>
     public MigrationManager(string repoRoot)
     {
         _migrationsPath = Path.Combine(
             repoRoot, "src", "FastIntegrationTests.Infrastructure", "Migrations");
+        _hiddenPath = Path.Combine(_migrationsPath, "__hidden");
     }
 
-    /// <summary>Создаёт указанное количество фейковых миграций в папке Infrastructure.</summary>
-    public void AddFakeMigrations(int count)
+    /// <summary>
+    /// Скрывает последние <paramref name="count"/> benchmark-миграций (timestamp 20990101...)
+    /// перемещая их пары (.cs + .Designer.cs) в <c>__hidden/</c>.
+    /// Вызывающий код отвечает за последующий rebuild.
+    /// </summary>
+    public void HideMigrations(int count)
     {
-        if (!Directory.Exists(_migrationsPath))
-            throw new DirectoryNotFoundException($"Migrations directory not found: {_migrationsPath}");
+        if (count <= 0) return;
 
-        Console.WriteLine($"\n[MIGRATIONS] Adding {count} fake migrations...");
-        for (var i = 1; i <= count; i++)
+        Directory.CreateDirectory(_hiddenPath);
+
+        var csFiles = Directory.GetFiles(_migrationsPath, "*.cs")
+            .Where(f => !f.Contains("__hidden") && !Path.GetFileName(f).EndsWith(".Designer.cs"))
+            .Order()
+            .TakeLast(count)
+            .ToList();
+
+        Console.WriteLine($"\n[MIGRATIONS] Hiding {count} benchmark migrations...");
+        foreach (var cs in csFiles)
         {
-            var name        = $"{FakePrefix}{i:D3}";
-            var timestamp   = $"29990101{i:D6}";
-            var migrationId = $"{timestamp}_{name}";
-            File.WriteAllText(
-                Path.Combine(_migrationsPath, $"{migrationId}.cs"),
-                GenerateMigration(name, migrationId, i));
-            File.WriteAllText(
-                Path.Combine(_migrationsPath, $"{migrationId}.Designer.cs"),
-                GenerateDesigner(name, migrationId));
+            var designer = Path.Combine(
+                Path.GetDirectoryName(cs)!,
+                Path.GetFileNameWithoutExtension(cs) + ".Designer.cs");
+
+            File.Move(cs, Path.Combine(_hiddenPath, Path.GetFileName(cs)));
+            if (File.Exists(designer))
+                File.Move(designer, Path.Combine(_hiddenPath, Path.GetFileName(designer)));
         }
-        Console.WriteLine($"[MIGRATIONS] Added {count} fake migrations");
+        Console.WriteLine($"[MIGRATIONS] Hidden {csFiles.Count} migrations ({csFiles.Count * 2} files)");
     }
 
-    /// <summary>Удаляет все файлы фейковых миграций из папки Infrastructure.</summary>
-    public void RemoveFakeMigrations()
+    /// <summary>
+    /// Восстанавливает все скрытые миграции из <c>__hidden/</c> обратно в папку Migrations.
+    /// No-op если папка пуста или не существует.
+    /// </summary>
+    public void RestoreHiddenMigrations()
     {
-        var files = Directory.GetFiles(_migrationsPath, $"*{FakePrefix}*");
+        if (!Directory.Exists(_hiddenPath)) return;
+
+        var files = Directory.GetFiles(_hiddenPath);
         if (files.Length == 0) return;
-        Console.WriteLine($"\n[MIGRATIONS] Removing {files.Length} fake migration files...");
-        foreach (var f in files) File.Delete(f);
+
+        Console.WriteLine($"\n[MIGRATIONS] Restoring {files.Length} hidden migration files...");
+        foreach (var f in files)
+            File.Move(f, Path.Combine(_migrationsPath, Path.GetFileName(f)));
+        Console.WriteLine($"[MIGRATIONS] Restored {files.Length} files");
     }
-
-    private static string GenerateMigration(string name, string migrationId, int index)
-    {
-        var isOdd   = index % 2 == 1;
-        var upSql   = isOdd ? OddUpSql(index)  : EvenUpSql(index);
-        var downSql = isOdd ? OddDownSql(index) : EvenDownSql(index);
-
-        return
-$@"using Microsoft.EntityFrameworkCore.Migrations;
-
-#nullable disable
-
-namespace FastIntegrationTests.Infrastructure.Migrations
-{{
-    /// <inheritdoc />
-    public partial class {name} : Migration
-    {{
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {{
-            migrationBuilder.Sql(@""{upSql}"");
-        }}
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {{
-            migrationBuilder.Sql(@""{downSql}"");
-        }}
-    }}
-}}
-";
-    }
-
-    // Генерирует Designer.cs с [DbContext] — именно так EF Core обнаруживает миграции
-    // в strict mode (когда хотя бы одна миграция в сборке имеет [DbContext]).
-    private static string GenerateDesigner(string name, string migrationId) =>
-$@"// <auto-generated />
-using FastIntegrationTests.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
-
-#nullable disable
-
-namespace FastIntegrationTests.Infrastructure.Migrations
-{{
-    [DbContext(typeof(ShopDbContext))]
-    [Migration(""{migrationId}"")]
-    partial class {name}
-    {{
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
-        {{
-            // Фейковые миграции не изменяют EF Core-модель — BuildTargetModel пустой.
-        }}
-    }}
-}}
-";
-
-    private static string OddUpSql(int i) =>
-$@"
-CREATE TABLE benchmark_ref_{i:D3} (
-    id         SERIAL       PRIMARY KEY,
-    code       VARCHAR(20)  NOT NULL,
-    name       VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP    NOT NULL DEFAULT NOW()
-);
-INSERT INTO benchmark_ref_{i:D3} (code, name)
-SELECT 'CODE_' || gs, 'Reference value number ' || gs
-FROM generate_series(1, 300) gs;
-";
-
-    private static string OddDownSql(int i) =>
-        $"DROP TABLE IF EXISTS benchmark_ref_{i:D3};";
-
-    // Чётные: справочная таблица + 150 строк seed (~5–10 мс).
-    // ALTER TABLE на Products не используется — таблица пустая при миграции (no-op UPDATE).
-    private static string EvenUpSql(int i) =>
-$@"
-CREATE TABLE benchmark_lookup_{i:D3} (
-    id         SERIAL       PRIMARY KEY,
-    key        VARCHAR(30)  NOT NULL UNIQUE,
-    value      TEXT         NOT NULL,
-    created_at TIMESTAMP    NOT NULL DEFAULT NOW()
-);
-INSERT INTO benchmark_lookup_{i:D3} (key, value)
-SELECT 'KEY_' || gs, 'Lookup value ' || gs
-FROM generate_series(1, 150) gs;
-";
-
-    private static string EvenDownSql(int i) =>
-        $"DROP TABLE IF EXISTS benchmark_lookup_{i:D3};";
 }
