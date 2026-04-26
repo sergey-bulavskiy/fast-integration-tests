@@ -34,7 +34,7 @@ var results          = new List<BenchmarkResult>();
 const int BaseMigrations   = 17;   // реальных миграций в репозитории
 const int MaxMigrations    = 117;  // с benchmark-миграциями — базовое состояние бенчмарка
 var approaches             = new[] { "IntegreSQL", "Respawn", "Testcontainers" };
-var migrationCounts        = new[] { 17, 42, 67, 92, 117 };
+var migrationCounts        = new[] { BaseMigrations, 42, 67, 92, MaxMigrations };
 var classScaleFactors      = new[] { 1, 5, 10, 20, 50 };
 var parallelismThreads     = new[] { 1, 2, 4, 8 };
 runner.SetTotalRuns((migrationCounts.Length + classScaleFactors.Length + parallelismThreads.Length) * approaches.Length);
