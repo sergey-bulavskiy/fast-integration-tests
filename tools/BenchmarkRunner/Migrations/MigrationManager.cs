@@ -27,12 +27,17 @@ public class MigrationManager
         Directory.CreateDirectory(_hiddenPath);
 
         var csFiles = Directory.GetFiles(_migrationsPath, "*.cs")
-            .Where(f => !f.Contains("__hidden") && !Path.GetFileName(f).EndsWith(".Designer.cs"))
+            .Where(f => !Path.GetDirectoryName(f)!.EndsWith("__hidden", StringComparison.OrdinalIgnoreCase)
+                     && !Path.GetFileName(f).EndsWith(".Designer.cs"))
             .Order()
             .TakeLast(count)
             .ToList();
 
-        Console.WriteLine($"\n[MIGRATIONS] Hiding {count} benchmark migrations...");
+        if (csFiles.Count < count)
+            Console.Error.WriteLine($"[MIGRATIONS] Warning: requested to hide {count} but only {csFiles.Count} benchmark migrations found");
+
+        Console.WriteLine($"\n[MIGRATIONS] Hiding {csFiles.Count}/{count} benchmark migrations...");
+        var movedFiles = 0;
         foreach (var cs in csFiles)
         {
             var designer = Path.Combine(
@@ -40,10 +45,14 @@ public class MigrationManager
                 Path.GetFileNameWithoutExtension(cs) + ".Designer.cs");
 
             File.Move(cs, Path.Combine(_hiddenPath, Path.GetFileName(cs)));
+            movedFiles++;
             if (File.Exists(designer))
+            {
                 File.Move(designer, Path.Combine(_hiddenPath, Path.GetFileName(designer)));
+                movedFiles++;
+            }
         }
-        Console.WriteLine($"[MIGRATIONS] Hidden {csFiles.Count} migrations ({csFiles.Count * 2} files)");
+        Console.WriteLine($"[MIGRATIONS] Hidden {csFiles.Count} migrations ({movedFiles} files)");
     }
 
     /// <summary>
@@ -60,6 +69,7 @@ public class MigrationManager
         Console.WriteLine($"\n[MIGRATIONS] Restoring {files.Length} hidden migration files...");
         foreach (var f in files)
             File.Move(f, Path.Combine(_migrationsPath, Path.GetFileName(f)));
+        Directory.Delete(_hiddenPath);
         Console.WriteLine($"[MIGRATIONS] Restored {files.Length} files");
     }
 }
