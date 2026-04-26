@@ -57,7 +57,7 @@ try
     // Каждый подход запускается по одному разу (TEST_REPEAT=1), результаты не сохраняются.
     // Цель: вытащить Docker-образы, прогреть JIT теста и container-startup каждого подхода
     // до первой измеряемой точки Сценария 1.
-    Console.WriteLine("\n═══ Warmup (не входит в отчёт) ═══");
+    Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Warmup (не входит в отчёт) ═══");
     foreach (var approach in approaches)
     {
         var warmup = runner.Warmup(new BenchmarkScenario(approach, "warmup", BaseMigrations, TestRepeat: 1, MaxParallelThreads: defaultThreads));
@@ -66,7 +66,7 @@ try
     }
 
     // ─── Сценарий 1: влияние числа миграций ────────────────────────────────────
-    Console.WriteLine("\n═══ Scenario 1: Migration Count Impact ═══");
+    Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Scenario 1: Migration Count Impact ═══");
     foreach (var migrationCount in migrationCounts)
     {
         var fakesToAdd = migrationCount - BaseMigrations;
@@ -92,13 +92,13 @@ try
     }
 
     // ─── Сценарий 2: масштаб числа тестов ──────────────────────────────────────
-    Console.WriteLine("\n═══ Scenario 2: Test Count Scaling ═══");
+    Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Scenario 2: Test Count Scaling ═══");
     foreach (var repeat in scalingRepeats)
         foreach (var approach in approaches)
             RunOrAbort(new BenchmarkScenario(approach, "scale", BaseMigrations, TestRepeat: repeat, MaxParallelThreads: defaultThreads));
 
     // ─── Сценарий 3: параллелизм ────────────────────────────────────────────────
-    Console.WriteLine("\n═══ Scenario 3: Parallelism ═══");
+    Console.WriteLine($"\n{DateTime.Now:HH:mm} ═══ Scenario 3: Parallelism ═══");
     foreach (var parallelism in parallelismThreads)
         foreach (var approach in approaches)
             RunOrAbort(new BenchmarkScenario(approach, "parallelism", BaseMigrations, TestRepeat: defaultRepeat, MaxParallelThreads: parallelism));

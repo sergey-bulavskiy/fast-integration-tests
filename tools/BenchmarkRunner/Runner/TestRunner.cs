@@ -37,7 +37,7 @@ class TestRunner
 
         foreach (var project in projects)
         {
-            Console.Write($"\n[BUILD] {project} ... ");
+            Console.Write($"\n{DateTime.Now:HH:mm} [BUILD] {project} ... ");
             var (output, code) = RunCapture("dotnet", $"build {project} --nologo -v minimal");
             if (code != 0)
             {
@@ -106,7 +106,7 @@ class TestRunner
     }
 
     private static string FormatPrefix(string tag, BenchmarkScenario s) =>
-        $"{tag} {s.Approach,-15} {s.ScenarioName,-12} m={s.MigrationCount,3} r={s.TestRepeat,2} t={s.MaxParallelThreads} ...";
+        $"{DateTime.Now:HH:mm} {tag} {s.Approach,-15} {s.ScenarioName,-12} m={s.MigrationCount,3} r={s.TestRepeat,2} t={s.MaxParallelThreads} ...";
 
     private static string FormatSuffix(double elapsed, bool success) =>
         $" {elapsed,6:F1}s  {(success ? "✓" : "✗ FAIL")}";
