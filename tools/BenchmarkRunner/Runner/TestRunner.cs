@@ -85,11 +85,6 @@ class TestRunner
         var (output, code) = RunCapture("dotnet", args);
         sw.Stop();
 
-        // Ryuk (Testcontainers resource reaper) держит IP в Docker bridge-сети до полной
-        // остановки контейнера. На быстрых машинах следующий прогон стартует раньше, чем
-        // Docker освобождает ресурсы → "address already in use". Пауза устраняет гонку.
-        Thread.Sleep(TimeSpan.FromSeconds(5));
-
         var (migrationMs, resetMs) = ParseBenchLines(output);
         return (sw.Elapsed.TotalSeconds, code == 0, output, migrationMs / 1000.0, resetMs / 1000.0);
     }
@@ -136,6 +131,12 @@ class TestRunner
             RedirectStandardOutput = true,
             RedirectStandardError  = true,
         };
+        // Быстрое цикличное создание/уничтожение контейнеров (336 шт. при scale=12) исчерпывает
+        // iptables-правила Docker bridge-сети на мощных машинах: IP переиспользуется раньше,
+        // чем старые правила очищаются → "address already in use" для postgresql:5432.
+        // Ryuk добавляет асинхронный слой очистки, который усугубляет гонку.
+        // DisposeAsync в фикстурах обеспечивает синхронную очистку — Ryuk не нужен.
+        psi.Environment["TESTCONTAINERS_RYUK_DISABLED"] = "true";
 
         var lines = new ConcurrentQueue<string>();
         using var process = Process.Start(psi)!;
