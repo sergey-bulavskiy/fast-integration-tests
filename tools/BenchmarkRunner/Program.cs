@@ -14,6 +14,8 @@ int timeoutMinutes     = 50; // таймаут одного прогона dotne
 // проверить: dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --list-tests 2>&1 | grep "FastIntegrationTests.Tests.IntegreSQL" | wc -l
 const int BaseTestCount = 223;
 
+bool testRespawn = args.Contains("--test-respawn");
+
 for (var i = 0; i < args.Length - 1; i++)
 {
     if (args[i] is "--scale" or "-s" && int.TryParse(args[i + 1], out var s) && s > 0)
@@ -44,6 +46,27 @@ Console.WriteLine($"Repo:    {repoRoot}");
 Console.WriteLine($"Machine: {Environment.MachineName}");
 Console.WriteLine($"Time:    {DateTime.Now:yyyy-MM-dd HH:mm}");
 Console.WriteLine($"Config:  threads={defaultThreads}, scale={defaultClassScale}, timeout={timeoutMinutes}m");
+
+if (testRespawn)
+{
+    Console.WriteLine("\n[--test-respawn] Single Respawn run: scale classes added, one shot, then cleanup.");
+    Console.WriteLine("Press Enter to start, Ctrl+C to cancel...");
+    Console.ReadLine();
+
+    migrationManager.RestoreHiddenMigrations();
+    classScaleManager.RemoveScaleClasses();
+    classScaleManager.AddScaleClasses(defaultClassScale);
+    runner.Build();
+
+    var scenario = new BenchmarkScenario("Respawn", "migrations", BaseMigrations, defaultThreads, defaultClassScale);
+    var result   = runner.Warmup(scenario);
+    Console.WriteLine(result.Success ? "\n✓ PASSED" : "\n✗ FAILED — see benchmark-results/last-failure.log");
+
+    classScaleManager.RemoveScaleClasses();
+    runner.Build();
+    Environment.Exit(result.Success ? 0 : 1);
+}
+
 Console.WriteLine("\nDocker must be running. Full run takes ~1-2 hours.");
 Console.WriteLine("Press Enter to start, Ctrl+C to cancel...");
 Console.ReadLine();
