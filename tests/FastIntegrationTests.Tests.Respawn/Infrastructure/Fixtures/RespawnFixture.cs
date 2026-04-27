@@ -69,26 +69,11 @@ public class RespawnFixture : IAsyncLifetime
         BenchmarkLogger.Write("reset", sw.ElapsedMilliseconds);
     }
 
-    /// <inheritdoc />
-    public virtual async Task DisposeAsync()
-    {
-        await using var adminConn = new NpgsqlConnection(_adminConnectionString);
-        await adminConn.OpenAsync();
-
-        await using (var terminateCmd = adminConn.CreateCommand())
-        {
-            terminateCmd.CommandText = $"""
-                SELECT pg_terminate_backend(pid)
-                FROM pg_stat_activity
-                WHERE datname = '{_dbName}' AND pid <> pg_backend_pid()
-                """;
-            await terminateCmd.ExecuteNonQueryAsync();
-        }
-
-        await using (var dropCmd = adminConn.CreateCommand())
-        {
-            dropCmd.CommandText = $"DROP DATABASE IF EXISTS \"{_dbName}\"";
-            await dropCmd.ExecuteNonQueryAsync();
-        }
-    }
+    /// <summary>
+    /// Явный DROP DATABASE не нужен: контейнер shared и живёт ровно один процесс —
+    /// Ryuk уничтожит его (и все базы в нём) сразу после завершения dotnet test.
+    /// Соединения освобождаются в <see cref="RespawnServiceTestBase.DisposeAsync"/>
+    /// через <c>Context.DisposeAsync()</c>.
+    /// </summary>
+    public virtual Task DisposeAsync() => Task.CompletedTask;
 }
