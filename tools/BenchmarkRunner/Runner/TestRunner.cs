@@ -85,8 +85,25 @@ class TestRunner
         var (output, code) = RunCapture("dotnet", args);
         sw.Stop();
 
+        WaitForRyukToStop();
+
         var (migrationMs, resetMs) = ParseBenchLines(output);
         return (sw.Elapsed.TotalSeconds, code == 0, output, migrationMs / 1000.0, resetMs / 1000.0);
+    }
+
+    // После завершения dotnet test Ryuk ещё живёт в Docker и держит 172.17.0.2:8080.
+    // Следующий прогон не может создать свой Ryuk на том же порту → все тесты падают.
+    // Опрашиваем docker ps, пока контейнер не исчезнет — не фиксированная пауза, а реальное ожидание.
+    private void WaitForRyukToStop(int timeoutSeconds = 60)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+        while (DateTime.UtcNow < deadline)
+        {
+            var (dockerOutput, _) = RunCapture("docker", "ps --filter name=testcontainers-ryuk --format {{.ID}}");
+            if (string.IsNullOrWhiteSpace(dockerOutput))
+                return;
+            Thread.Sleep(500);
+        }
     }
 
     private static (long MigrationMs, long ResetMs) ParseBenchLines(string output)
