@@ -40,6 +40,6 @@ public abstract class ComponentTestBase : IAsyncLifetime
         var sw = System.Diagnostics.Stopwatch.StartNew();
         await _initializer.RemoveDatabase(_connectionString);
         sw.Stop();
-        Console.WriteLine($"##BENCH[reset]={sw.ElapsedMilliseconds}");
+        BenchmarkLogger.Write("reset", sw.ElapsedMilliseconds);
     }
 }

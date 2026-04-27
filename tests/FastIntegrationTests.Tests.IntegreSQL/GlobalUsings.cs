@@ -8,6 +8,7 @@ global using FastIntegrationTests.Application.Interfaces;
 global using FastIntegrationTests.Application.Services;
 global using FastIntegrationTests.Infrastructure.Data;
 global using FastIntegrationTests.Infrastructure.Repositories;
+global using FastIntegrationTests.Tests.Infrastructure;
 global using FastIntegrationTests.Tests.Infrastructure.Base;
 global using FastIntegrationTests.Tests.Infrastructure.WebApp;
 global using Microsoft.EntityFrameworkCore;

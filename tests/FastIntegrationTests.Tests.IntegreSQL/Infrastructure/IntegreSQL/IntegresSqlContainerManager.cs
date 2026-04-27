@@ -112,7 +112,7 @@ public static class IntegresSqlContainerManager
         var warmupCs = await initializer.CreateDatabaseGetConnectionString(
             IntegresSqlDefaults.SeedingOptions);
         migSw.Stop();
-        Console.WriteLine($"##BENCH[migration]={migSw.ElapsedMilliseconds}");
+        BenchmarkLogger.Write("migration", migSw.ElapsedMilliseconds);
         await initializer.RemoveDatabase(warmupCs);
 
         return new IntegresSqlState(initializer);

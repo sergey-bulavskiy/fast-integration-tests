@@ -37,7 +37,7 @@ public sealed class TestDbFactory
             var sw = System.Diagnostics.Stopwatch.StartNew();
             await context.Database.MigrateAsync(ct);
             sw.Stop();
-            Console.WriteLine($"##BENCH[migration]={sw.ElapsedMilliseconds}");
+            BenchmarkLogger.Write("migration", sw.ElapsedMilliseconds);
         }
         catch
         {

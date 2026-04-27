@@ -38,7 +38,10 @@ public abstract class ApiTestBase : IAsyncLifetime
         if (_context is null) return;
         Client?.Dispose();
         if (_factory is not null) await _factory.DisposeAsync();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         await _context.Database.EnsureDeletedAsync();
+        sw.Stop();
+        BenchmarkLogger.Write("reset", sw.ElapsedMilliseconds);
         await _context.DisposeAsync();
     }
 }

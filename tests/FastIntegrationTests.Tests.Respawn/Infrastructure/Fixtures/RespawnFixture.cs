@@ -1,19 +1,17 @@
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Networks;
 using Npgsql;
 using Respawn;
-using Testcontainers.PostgreSql;
 
 namespace FastIntegrationTests.Tests.Infrastructure.Fixtures;
 
 /// <summary>
-/// Запускает контейнер PostgreSQL, применяет миграции один раз на класс
+/// Получает общий контейнер PostgreSQL из <see cref="RespawnContainerManager"/>,
+/// создаёт изолированную базу данных один раз на класс, применяет миграции EF Core
 /// и сбрасывает данные через Respawn перед каждым тестом.
 /// </summary>
 public class RespawnFixture : IAsyncLifetime
 {
-    private INetwork _network = null!;
-    private PostgreSqlContainer _container = null!;
+    private string _dbName = null!;
+    private string _adminConnectionString = null!;
     private Respawner _respawner = null!;
 
     /// <summary>Строка подключения к тестовой БД.</summary>
@@ -22,55 +20,34 @@ public class RespawnFixture : IAsyncLifetime
     /// <inheritdoc />
     public virtual async Task InitializeAsync()
     {
-        // Изолированная сеть на каждую фикстуру — без неё Docker переиспользует IP (172.17.0.x)
-        // для новых контейнеров быстрее, чем iptables успевает очистить правила предыдущих.
-        // На мощных машинах с быстрым оборотом фикстур это приводит к "address already in use".
-        _network = new NetworkBuilder().Build();
-        await _network.CreateAsync();
+        var container = await RespawnContainerManager.GetContainerAsync();
+        _adminConnectionString = container.GetConnectionString();
+        _dbName = $"respawn_{Guid.NewGuid():N}";
 
-        // Параметры производительности PostgreSQL для тестовой среды.
-        // Рекомендованы авторами IntegreSQL в официальном docker-compose.yml:
-        // https://github.com/allaboutapps/integresql/blob/master/README.md
-        // Совокупно дают ~30% ускорение за счёт отключения гарантий долговечности WAL,
-        // которые необходимы в продакшне, но бессмысленны для эфемерных тестовых данных.
-        // ⚠ НИКОГДА не переносить в продакшн — при сбое питания/краше возможна потеря данных.
-        _container = new PostgreSqlBuilder()
-            .WithNetwork(_network)
-            .WithImage("postgres:16-alpine")
-            .WithCommand(
-                // fsync=off: PostgreSQL не вызывает fsync() для сброса WAL на диск.
-                // В продакшне защищает от потери коммитов при сбое питания.
-                // В тесте контейнер эфемерный — защита не нужна, а ожидание IO — главный тормоз.
-                // Docs: https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-FSYNC
-                "-c", "fsync=off",
-                // synchronous_commit=off: сервер подтверждает транзакцию клиенту не дожидаясь
-                // записи WAL на диск. С fsync=off основной эффект уже достигнут, но явное
-                // отключение дополнительно убирает задержки синхронизации со standby-репликами.
-                // Docs: https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT
-                "-c", "synchronous_commit=off",
-                // full_page_writes=off: PostgreSQL не записывает полную страницу в WAL после
-                // чекпоинта. С fsync=off частичная запись страниц невозможна, поэтому флаг
-                // избыточен. Отключение снижает объём WAL-записей.
-                // Docs: https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-FULL-PAGE-WRITES
-                "-c", "full_page_writes=off",
-                // shared_buffers=128MB: размер общего буферного кеша. Дефолт в alpine-образе
-                // — 32MB. 128MB снижает количество дисковых чтений при повторных обращениях
-                // к одним страницам между тестами.
-                // Docs: https://www.postgresql.org/docs/current/runtime-config-resource.html#GUC-SHARED-BUFFERS
-                "-c", "shared_buffers=128MB"
-            )
-            .Build();
-        await _container.StartAsync();
-        ConnectionString = _container.GetConnectionString();
+        await using var adminConn = new NpgsqlConnection(_adminConnectionString);
+        await adminConn.OpenAsync();
+
+        var migSw = System.Diagnostics.Stopwatch.StartNew();
+
+        await using (var createCmd = adminConn.CreateCommand())
+        {
+            createCmd.CommandText = $"CREATE DATABASE \"{_dbName}\"";
+            await createCmd.ExecuteNonQueryAsync();
+        }
+
+        var csb = new NpgsqlConnectionStringBuilder(_adminConnectionString)
+        {
+            Database = _dbName
+        };
+        ConnectionString = csb.ConnectionString;
 
         var options = new DbContextOptionsBuilder<ShopDbContext>()
             .UseNpgsql(ConnectionString).Options;
         await using var ctx = new ShopDbContext(options);
-
-        var migSw = System.Diagnostics.Stopwatch.StartNew();
         await ctx.Database.MigrateAsync();
+
         migSw.Stop();
-        Console.WriteLine($"##BENCH[migration]={migSw.ElapsedMilliseconds}");
+        BenchmarkLogger.Write("migration", migSw.ElapsedMilliseconds);
 
         await using var conn = new NpgsqlConnection(ConnectionString);
         await conn.OpenAsync();
@@ -89,15 +66,21 @@ public class RespawnFixture : IAsyncLifetime
         var sw = System.Diagnostics.Stopwatch.StartNew();
         await _respawner.ResetAsync(conn);
         sw.Stop();
-        Console.WriteLine($"##BENCH[reset]={sw.ElapsedMilliseconds}");
+        BenchmarkLogger.Write("reset", sw.ElapsedMilliseconds);
     }
 
     /// <inheritdoc />
     public virtual async Task DisposeAsync()
     {
-        if (_container is not null)
-            await _container.DisposeAsync();
-        if (_network is not null)
-            await _network.DisposeAsync();
+        await using var adminConn = new NpgsqlConnection(_adminConnectionString);
+        await adminConn.OpenAsync();
+        await using var cmd = adminConn.CreateCommand();
+        cmd.CommandText = $"""
+            SELECT pg_terminate_backend(pid)
+            FROM pg_stat_activity
+            WHERE datname = '{_dbName}' AND pid <> pg_backend_pid();
+            DROP DATABASE IF EXISTS "{_dbName}";
+            """;
+        await cmd.ExecuteNonQueryAsync();
     }
 }

@@ -76,18 +76,28 @@ class TestRunner
 
     private (double Elapsed, bool Success, string Output, double MigrationSeconds, double ResetSeconds) RunTest(BenchmarkScenario scenario)
     {
+        var benchLogFile = Path.Combine(
+            Path.GetTempPath(), $"bench-{Guid.NewGuid():N}.log");
+
         var args =
             $"test tests/FastIntegrationTests.Tests.{scenario.Approach}" +
             $" --no-build" +
             $" -- xUnit.MaxParallelThreads={scenario.MaxParallelThreads}";
 
         var sw = Stopwatch.StartNew();
-        var (output, code) = RunCapture("dotnet", args);
+        var (output, code) = RunCapture("dotnet", args,
+            new Dictionary<string, string> { ["BENCH_LOG_FILE"] = benchLogFile });
         sw.Stop();
 
         WaitForRyukToStop();
 
-        var (migrationMs, resetMs) = ParseBenchLines(output);
+        var benchContent = File.Exists(benchLogFile)
+            ? File.ReadAllText(benchLogFile)
+            : string.Empty;
+        if (File.Exists(benchLogFile))
+            File.Delete(benchLogFile);
+
+        var (migrationMs, resetMs) = ParseBenchLines(benchContent);
         return (sw.Elapsed.TotalSeconds, code == 0, output, migrationMs / 1000.0, resetMs / 1000.0);
     }
 
@@ -139,7 +149,9 @@ class TestRunner
         Console.WriteLine($"  → see {_logPath}");
     }
 
-    private (string Output, int Code) RunCapture(string filename, string args)
+    private (string Output, int Code) RunCapture(
+        string filename, string args,
+        IReadOnlyDictionary<string, string>? env = null)
     {
         var psi = new ProcessStartInfo(filename, args)
         {
@@ -148,6 +160,9 @@ class TestRunner
             RedirectStandardOutput = true,
             RedirectStandardError  = true,
         };
+        if (env is not null)
+            foreach (var (k, v) in env)
+                psi.Environment[k] = v;
 
         var lines = new ConcurrentQueue<string>();
         using var process = Process.Start(psi)!;

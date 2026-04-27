@@ -72,9 +72,10 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 - Тесты полностью изолированы — параллелизм внутри класса возможен.
 
 **Respawn** (`RespawnServiceTestBase` / `RespawnApiTestBase`):
-- Один контейнер PostgreSQL **на класс** (через `IClassFixture<RespawnFixture>`).
+- Один контейнер PostgreSQL **на весь процесс** — `RespawnContainerManager` (static Lazy).
+- Каждый класс создаёт отдельную БД (`CREATE DATABASE`) и дропает при завершении.
 - Миграции применяются **один раз на класс** в `RespawnFixture.InitializeAsync()`.
-- Между тестами — `TRUNCATE CASCADE` через Respawn, схема сохраняется.
+- Между тестами — Respawn выполняет DELETE в детерминированном порядке по FK-зависимостям, схема сохраняется.
 - TestServer и HttpClient создаются **один раз на класс** и переиспользуются.
 - Тесты внутри одного класса выполняются **последовательно** (общая БД).
 
@@ -88,9 +89,9 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 
 | | IntegreSQL | Respawn | Testcontainers |
 |---|---|---|---|
-| Контейнер | 1 на процесс | 1 на класс | 1 на класс |
+| Контейнер | 1 на процесс | 1 на процесс | 1 на класс |
 | Миграции | 1 раз (весь процесс) | 1 раз (класс) | 1 раз (класс) |
-| Сброс данных | возврат клона в пул (recreate) | TRUNCATE CASCADE | EnsureDeleted + Migrate |
+| Сброс данных | возврат клона в пул (recreate) | DELETE по FK-порядку | EnsureDeleted + Migrate |
 | TestServer (API) | новый на каждый тест | 1 на класс | новый на каждый тест |
 | Параллелизм внутри класса | да | нет | да |
 

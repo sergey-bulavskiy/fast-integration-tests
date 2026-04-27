@@ -7,7 +7,7 @@
 | Подход | Изоляция | Скорость сброса |
 |--------|----------|-----------------|
 | **IntegreSQL** | клон шаблонной БД на каждый тест | ~5 мс |
-| **Respawn** | TRUNCATE CASCADE между тестами | ~1 мс |
+| **Respawn** | DELETE по FK-порядку между тестами | ~1 мс |
 | **Testcontainers** | EnsureDeleted + MigrateAsync на каждый тест | ~200 мс |
 
 ---
@@ -173,9 +173,9 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 
 | | IntegreSQL | Respawn | Testcontainers |
 |---|---|---|---|
-| Контейнер | 1 на процесс | 1 на класс | 1 на класс |
+| Контейнер | 1 на процесс | 1 на процесс | 1 на класс |
 | Миграции | 1 раз (весь процесс) | 1 раз на класс | 1 раз на класс |
-| Сброс данных | удаление клона ~5 мс | TRUNCATE ~1 мс | EnsureDeleted ~200 мс |
+| Сброс данных | удаление клона ~5 мс | DELETE по FK-порядку ~1 мс | EnsureDeleted ~200 мс |
 | Параллелизм внутри класса | да | нет | да |
 
 ---

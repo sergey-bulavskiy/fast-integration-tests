@@ -38,7 +38,10 @@ public abstract class ServiceTestBase : IAsyncLifetime
     public async Task DisposeAsync()
     {
         if (_context is null) return;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         await _context.Database.EnsureDeletedAsync();
+        sw.Stop();
+        BenchmarkLogger.Write("reset", sw.ElapsedMilliseconds);
         await _context.DisposeAsync();
     }
 }
