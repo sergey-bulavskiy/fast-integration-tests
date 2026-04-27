@@ -1,3 +1,5 @@
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Networks;
 using Npgsql;
 using Respawn;
 using Testcontainers.PostgreSql;
@@ -10,6 +12,7 @@ namespace FastIntegrationTests.Tests.Infrastructure.Fixtures;
 /// </summary>
 public class RespawnFixture : IAsyncLifetime
 {
+    private INetwork _network = null!;
     private PostgreSqlContainer _container = null!;
     private Respawner _respawner = null!;
 
@@ -19,6 +22,12 @@ public class RespawnFixture : IAsyncLifetime
     /// <inheritdoc />
     public virtual async Task InitializeAsync()
     {
+        // Изолированная сеть на каждую фикстуру — без неё Docker переиспользует IP (172.17.0.x)
+        // для новых контейнеров быстрее, чем iptables успевает очистить правила предыдущих.
+        // На мощных машинах с быстрым оборотом фикстур это приводит к "address already in use".
+        _network = new NetworkBuilder().Build();
+        await _network.CreateAsync();
+
         // Параметры производительности PostgreSQL для тестовой среды.
         // Рекомендованы авторами IntegreSQL в официальном docker-compose.yml:
         // https://github.com/allaboutapps/integresql/blob/master/README.md
@@ -26,6 +35,7 @@ public class RespawnFixture : IAsyncLifetime
         // которые необходимы в продакшне, но бессмысленны для эфемерных тестовых данных.
         // ⚠ НИКОГДА не переносить в продакшн — при сбое питания/краше возможна потеря данных.
         _container = new PostgreSqlBuilder()
+            .WithNetwork(_network)
             .WithImage("postgres:16-alpine")
             .WithCommand(
                 // fsync=off: PostgreSQL не вызывает fsync() для сброса WAL на диск.
@@ -87,5 +97,7 @@ public class RespawnFixture : IAsyncLifetime
     {
         if (_container is not null)
             await _container.DisposeAsync();
+        if (_network is not null)
+            await _network.DisposeAsync();
     }
 }
