@@ -74,13 +74,21 @@ public class RespawnFixture : IAsyncLifetime
     {
         await using var adminConn = new NpgsqlConnection(_adminConnectionString);
         await adminConn.OpenAsync();
-        await using var cmd = adminConn.CreateCommand();
-        cmd.CommandText = $"""
-            SELECT pg_terminate_backend(pid)
-            FROM pg_stat_activity
-            WHERE datname = '{_dbName}' AND pid <> pg_backend_pid();
-            DROP DATABASE IF EXISTS "{_dbName}";
-            """;
-        await cmd.ExecuteNonQueryAsync();
+
+        await using (var terminateCmd = adminConn.CreateCommand())
+        {
+            terminateCmd.CommandText = $"""
+                SELECT pg_terminate_backend(pid)
+                FROM pg_stat_activity
+                WHERE datname = '{_dbName}' AND pid <> pg_backend_pid()
+                """;
+            await terminateCmd.ExecuteNonQueryAsync();
+        }
+
+        await using (var dropCmd = adminConn.CreateCommand())
+        {
+            dropCmd.CommandText = $"DROP DATABASE IF EXISTS \"{_dbName}\"";
+            await dropCmd.ExecuteNonQueryAsync();
+        }
     }
 }
