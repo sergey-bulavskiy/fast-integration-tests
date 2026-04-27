@@ -131,12 +131,6 @@ class TestRunner
             RedirectStandardOutput = true,
             RedirectStandardError  = true,
         };
-        // Быстрое цикличное создание/уничтожение контейнеров (336 шт. при scale=12) исчерпывает
-        // iptables-правила Docker bridge-сети на мощных машинах: IP переиспользуется раньше,
-        // чем старые правила очищаются → "address already in use" для postgresql:5432.
-        // Ryuk добавляет асинхронный слой очистки, который усугубляет гонку.
-        // DisposeAsync в фикстурах обеспечивает синхронную очистку — Ryuk не нужен.
-        psi.Environment["TESTCONTAINERS_RYUK_DISABLED"] = "true";
 
         var lines = new ConcurrentQueue<string>();
         using var process = Process.Start(psi)!;
