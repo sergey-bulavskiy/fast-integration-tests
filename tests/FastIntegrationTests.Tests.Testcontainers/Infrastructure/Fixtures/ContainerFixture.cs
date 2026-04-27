@@ -23,6 +23,7 @@ public sealed class ContainerFixture : IAsyncLifetime
         // ⚠ НИКОГДА не переносить в продакшн — при сбое питания/краше возможна потеря данных.
         _container = new PostgreSqlBuilder()
             .WithImage("postgres:16-alpine")
+            .WithAutoRemove(true)
             .WithCommand(
                 // fsync=off: PostgreSQL не вызывает fsync() для сброса WAL на диск.
                 // В продакшне защищает от потери коммитов при сбое питания.
