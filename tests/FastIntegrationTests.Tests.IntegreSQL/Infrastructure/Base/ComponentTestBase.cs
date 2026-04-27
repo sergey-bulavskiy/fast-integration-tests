@@ -34,7 +34,10 @@ public abstract class ComponentTestBase : IAsyncLifetime
     public async Task DisposeAsync()
     {
         Client?.Dispose();
-        if (_factory is not null) await _factory.DisposeAsync();
+        if (_factory is not null)
+            // PhysicalFilesWatcher внутри WebApplicationFactory может бросить NullReferenceException
+            // при диспозе под высокой параллельностью — баг в ASP.NET Core FileSystemWatcher.
+            try { await _factory.DisposeAsync(); } catch (NullReferenceException) { }
         await using var conn = new NpgsqlConnection(_connectionString);
         NpgsqlConnection.ClearPool(conn);
         var sw = System.Diagnostics.Stopwatch.StartNew();

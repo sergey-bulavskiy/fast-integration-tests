@@ -37,7 +37,10 @@ public abstract class ApiTestBase : IAsyncLifetime
     {
         if (_context is null) return;
         Client?.Dispose();
-        if (_factory is not null) await _factory.DisposeAsync();
+        if (_factory is not null)
+            // PhysicalFilesWatcher внутри WebApplicationFactory может бросить NullReferenceException
+            // при диспозе под высокой параллельностью — баг в ASP.NET Core FileSystemWatcher.
+            try { await _factory.DisposeAsync(); } catch (NullReferenceException) { }
         var sw = System.Diagnostics.Stopwatch.StartNew();
         await _context.Database.EnsureDeletedAsync();
         sw.Stop();
