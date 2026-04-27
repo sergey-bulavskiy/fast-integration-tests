@@ -26,7 +26,7 @@ public class MigrationManager
 
         Directory.CreateDirectory(_hiddenPath);
 
-        var csFiles = Directory.GetFiles(_migrationsPath, "*.cs")
+        var csFiles = Directory.GetFiles(_migrationsPath, "20990101*.cs")
             .Where(f => !Path.GetDirectoryName(f)!.EndsWith("__hidden", StringComparison.OrdinalIgnoreCase)
                      && !Path.GetFileName(f).EndsWith(".Designer.cs"))
             .Order()
