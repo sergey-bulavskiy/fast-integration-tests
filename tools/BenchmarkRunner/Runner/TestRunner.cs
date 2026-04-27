@@ -85,6 +85,11 @@ class TestRunner
         var (output, code) = RunCapture("dotnet", args);
         sw.Stop();
 
+        // Ryuk (Testcontainers resource reaper) держит IP в Docker bridge-сети до полной
+        // остановки контейнера. На быстрых машинах следующий прогон стартует раньше, чем
+        // Docker освобождает ресурсы → "address already in use". Пауза устраняет гонку.
+        Thread.Sleep(TimeSpan.FromSeconds(5));
+
         var (migrationMs, resetMs) = ParseBenchLines(output);
         return (sw.Elapsed.TotalSeconds, code == 0, output, migrationMs / 1000.0, resetMs / 1000.0);
     }
