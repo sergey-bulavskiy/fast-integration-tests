@@ -8,7 +8,7 @@ using BenchmarkRunner.Scale;
 // ─── Аргументы командной строки ────────────────────────────────────────────
 int defaultThreads     = 8;  // для сценариев, где потоки не варьируются (1 и 2)
 int defaultClassScale  = 12; // для сценариев, где масштаб не варьируется (1 и 3)
-int timeoutMinutes     = 50; // таймаут одного прогона dotnet test
+const int TimeoutMinutes = 120; // верхняя крышка одного прогона dotnet test
 
 // хардкод — обновить при добавлении/удалении тест-методов в тест-проектах
 // проверить: dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --list-tests 2>&1 | grep "FastIntegrationTests.Tests.IntegreSQL" | wc -l
@@ -22,12 +22,10 @@ for (var i = 0; i < args.Length - 1; i++)
         defaultClassScale = s;
     if (args[i] is "--threads" or "-t" && int.TryParse(args[i + 1], out var t) && t > 0)
         defaultThreads = t;
-    if (args[i] is "--timeout" && int.TryParse(args[i + 1], out var to) && to > 0)
-        timeoutMinutes = to;
 }
 
 var repoRoot         = FindRepoRoot();
-var runner           = new TestRunner(repoRoot, TimeSpan.FromMinutes(timeoutMinutes));
+var runner           = new TestRunner(repoRoot, TimeSpan.FromMinutes(TimeoutMinutes));
 var migrationManager = new MigrationManager(repoRoot);
 var classScaleManager = new ClassScaleManager(repoRoot);
 var reportGenerator  = new ReportGenerator(repoRoot);
@@ -45,7 +43,7 @@ Console.WriteLine("=== Integration Test Benchmark Runner ===");
 Console.WriteLine($"Repo:    {repoRoot}");
 Console.WriteLine($"Machine: {Environment.MachineName}");
 Console.WriteLine($"Time:    {DateTime.Now:yyyy-MM-dd HH:mm}");
-Console.WriteLine($"Config:  threads={defaultThreads}, scale={defaultClassScale}, timeout={timeoutMinutes}m");
+Console.WriteLine($"Config:  threads={defaultThreads}, scale={defaultClassScale}, timeout={TimeoutMinutes}m");
 
 if (testRespawn)
 {
