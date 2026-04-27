@@ -1,5 +1,3 @@
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Networks;
 using Npgsql;
 using Respawn;
 using Testcontainers.PostgreSql;
@@ -12,7 +10,6 @@ namespace FastIntegrationTests.Tests.Infrastructure.Fixtures;
 /// </summary>
 public class RespawnFixture : IAsyncLifetime
 {
-    private INetwork _network = null!;
     private PostgreSqlContainer _container = null!;
     private Respawner _respawner = null!;
 
@@ -28,16 +25,8 @@ public class RespawnFixture : IAsyncLifetime
         // Совокупно дают ~30% ускорение за счёт отключения гарантий долговечности WAL,
         // которые необходимы в продакшне, но бессмысленны для эфемерных тестовых данных.
         // ⚠ НИКОГДА не переносить в продакшн — при сбое питания/краше возможна потеря данных.
-        // Изолированная сеть на каждую фикстуру устраняет конфликты IP при быстром
-        // переиспользовании адресов Docker bridge: каждая сеть имеет собственное
-        // IP-пространство и отдельные iptables-правила.
-        _network = new NetworkBuilder().Build();
-        await _network.CreateAsync();
-
         _container = new PostgreSqlBuilder()
             .WithImage("postgres:16-alpine")
-            .WithNetwork(_network)
-            .WithAutoRemove(true)
             .WithCommand(
                 // fsync=off: PostgreSQL не вызывает fsync() для сброса WAL на диск.
                 // В продакшне защищает от потери коммитов при сбое питания.
@@ -98,7 +87,5 @@ public class RespawnFixture : IAsyncLifetime
     {
         if (_container is not null)
             await _container.DisposeAsync();
-        if (_network is not null)
-            await _network.DisposeAsync();
     }
 }
