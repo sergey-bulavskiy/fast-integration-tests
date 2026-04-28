@@ -72,8 +72,17 @@ public class RespawnFixture : IAsyncLifetime
     /// <summary>
     /// Явный DROP DATABASE не нужен: контейнер shared и живёт ровно один процесс —
     /// Ryuk уничтожит его (и все базы в нём) сразу после завершения dotnet test.
-    /// Соединения освобождаются в <see cref="RespawnServiceTestBase.DisposeAsync"/>
-    /// через <c>Context.DisposeAsync()</c>.
+    /// Пул Npgsql очищается явно: при большом scale накапливаются сотни уникальных
+    /// connection strings (по одной на класс), каждая держит idle-соединения —
+    /// без явной очистки PostgreSQL получает "too many clients".
     /// </summary>
-    public virtual Task DisposeAsync() => Task.CompletedTask;
+    public virtual Task DisposeAsync()
+    {
+        if (ConnectionString is not null)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            NpgsqlConnection.ClearPool(conn);
+        }
+        return Task.CompletedTask;
+    }
 }
