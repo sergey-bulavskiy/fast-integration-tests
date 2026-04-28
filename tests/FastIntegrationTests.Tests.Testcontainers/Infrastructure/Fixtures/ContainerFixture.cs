@@ -18,6 +18,9 @@ public sealed class ContainerFixture : IAsyncLifetime
     /// <inheritdoc />
     public async Task InitializeAsync()
     {
+        // Предыдущий Ryuk мог не успеть дочистить сеть до начала новой инициализации.
+        await Task.Delay(TimeSpan.FromSeconds(10));
+
         // Изолированная сеть на каждую фикстуру — без неё Docker переиспользует IP (172.17.0.x)
         // для новых контейнеров быстрее, чем iptables успевает очистить правила предыдущих.
         // На мощных машинах с быстрым оборотом фикстур это приводит к "address already in use".
@@ -61,6 +64,11 @@ public sealed class ContainerFixture : IAsyncLifetime
         sw.Stop();
         BenchmarkLogger.Write("container", sw.ElapsedMilliseconds);
         ConnectionString = _container.GetConnectionString();
+
+        // Ryuk от предыдущей фикстуры дочищает сети асинхронно после DisposeAsync,
+        // а новый Ryuk не всегда успевает полностью подняться к моменту старта тестов.
+        // Пауза даёт время обоим завершить инициализацию/очистку.
+        await Task.Delay(TimeSpan.FromSeconds(10));
     }
 
     /// <inheritdoc />
