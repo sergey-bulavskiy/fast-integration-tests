@@ -13,7 +13,26 @@
       background: #f9fafb; color: #111;
     }
     h1 { font-size: 1.5rem; margin-bottom: 4px; }
-    .meta { color: #6b7280; font-size: 0.82rem; margin-bottom: 32px; }
+    .meta { color: #6b7280; font-size: 0.82rem; margin-bottom: 16px; }
+    .approach-toggles {
+      position: sticky; top: 0; z-index: 10;
+      background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+      display: flex; gap: 8px; align-items: center;
+      padding: 10px 0 10px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .approach-toggles span { font-size: 0.82rem; color: #6b7280; margin-right: 4px; }
+    .approach-btn {
+      padding: 5px 16px; border-radius: 20px; border: 2px solid;
+      background: transparent; cursor: pointer; font-size: 0.82rem; font-weight: 600;
+      transition: opacity 0.15s, background 0.15s; opacity: 0.3;
+    }
+    .approach-btn.active { opacity: 1; }
+    .approach-btn[data-approach="IntegreSQL"]     { border-color: rgb(59,130,246);  color: rgb(59,130,246);  }
+    .approach-btn[data-approach="IntegreSQL"].active     { background: rgba(59,130,246,0.1);  }
+    .approach-btn[data-approach="Respawn"]        { border-color: rgb(34,197,94);   color: rgb(34,197,94);   }
+    .approach-btn[data-approach="Respawn"].active        { background: rgba(34,197,94,0.1);   }
+    .approach-btn[data-approach="Testcontainers"] { border-color: rgb(239,68,68);   color: rgb(239,68,68);   }
+    .approach-btn[data-approach="Testcontainers"].active { background: rgba(239,68,68,0.1);   }
     .card {
       background: #fff; border-radius: 8px; padding: 24px;
       margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,.08);
@@ -28,6 +47,13 @@
 
   <h1>Integration Test Benchmark</h1>
   <p class="meta" id="meta"></p>
+
+  <div class="approach-toggles">
+    <span>Подходы:</span>
+    <button class="approach-btn active" data-approach="IntegreSQL">IntegreSQL</button>
+    <button class="approach-btn active" data-approach="Respawn">Respawn</button>
+    <button class="approach-btn active" data-approach="Testcontainers">Testcontainers</button>
+  </div>
 
   <div class="card">
     <h2>Сценарий 1 — Влияние числа миграций</h2>
@@ -48,9 +74,21 @@
   </div>
 
   <div class="card">
-    <h2>Состав времени — минимум и максимум миграций</h2>
+    <h2>Измеренный overhead на тест (мс) — минимум и максимум миграций</h2>
     <p class="subtitle" id="subtitle-timing"></p>
     <canvas id="chart-timing"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>Testcontainers — один контейнер (мс)</h2>
+    <p class="subtitle" id="subtitle-one-container"></p>
+    <canvas id="chart-one-container"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>Testcontainers — весь прогон (с)</h2>
+    <p class="subtitle" id="subtitle-whole-run"></p>
+    <canvas id="chart-whole-run"></canvas>
   </div>
 
   <script>
@@ -79,7 +117,7 @@
 
       if (m1) document.getElementById('subtitle-timing').textContent =
         `${m1.scenario.classScale * BASE_TEST_COUNT} тестов, потоков=${m1.scenario.maxParallelThreads}` +
-        ` | Слои: миграции / сброс данных / бизнес-логика`;
+        ` | Среднее на тест (мс): контейнер / миграции / клон БД / сброс`;
     })();
 
     const COLORS = {
@@ -89,6 +127,11 @@
     };
 
     const APPROACHES = ['IntegreSQL', 'Respawn', 'Testcontainers'];
+
+    const visibleApproaches = new Set(APPROACHES);
+    const lineCharts = [];
+    let timingChart = null;
+    let timingItems = [];
 
     function buildChart(canvasId, scenarioName, xField, xLabel, xTransform = x => x) {
       const rows    = data.results.filter(r => r.scenario.scenarioName === scenarioName);
@@ -108,7 +151,7 @@
         fill:            false,
       }));
 
-      new Chart(document.getElementById(canvasId), {
+      const chart = new Chart(document.getElementById(canvasId), {
         type: 'line',
         data: { labels: xValues.map(xTransform), datasets },
         options: {
@@ -126,6 +169,7 @@
           }
         }
       });
+      lineCharts.push(chart);
     }
 
     buildChart('chart-migrations', 'migrations', 'migrationCount',     'Количество миграций');
@@ -140,32 +184,128 @@
       );
       if (!rows.length) return;
 
-      const labels = [];
-      const migData = [], resetData = [], bizData = [];
-      const bizColors = [];
+      const testCount = rows[0].scenario.classScale * BASE_TEST_COUNT;
+      const toMs = s => +((s || 0) * 1000 / testCount).toFixed(1);
 
       for (const approach of APPROACHES) {
         for (const count of [MIN_M, MAX_M]) {
           const row = rows.find(r => r.scenario.approach === approach && r.scenario.migrationCount === count);
-          labels.push(approach + ' (' + count + ')');
-          const mig   = row ? +(row.migrationSeconds || 0).toFixed(2) : null;
-          const reset = row ? +(row.resetSeconds     || 0).toFixed(2) : null;
-          const biz   = row ? +Math.max(0, row.elapsedSeconds - (row.migrationSeconds || 0) - (row.resetSeconds || 0)).toFixed(2) : null;
-          migData.push(mig);
-          resetData.push(reset);
-          bizData.push(biz);
-          bizColors.push(COLORS[approach].border.replace('rgb', 'rgba').replace(')', ',0.7)'));
+          timingItems.push({
+            label:     approach + ' (' + count + ')',
+            approach,
+            container: row ? toMs(row.containerSeconds) : null,
+            migration: row ? toMs(row.migrationSeconds) : null,
+            clone:     row ? toMs(row.cloneSeconds)     : null,
+            reset:     row ? toMs(row.resetSeconds)     : null,
+          });
         }
       }
 
-      new Chart(document.getElementById('chart-timing'), {
+      timingChart = new Chart(document.getElementById('chart-timing'), {
+        type: 'bar',
+        data: {
+          labels:   timingItems.map(i => i.label),
+          datasets: [
+            { label: 'Контейнер',    data: timingItems.map(i => i.container), backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { label: 'Миграции',     data: timingItems.map(i => i.migration), backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
+            { label: 'Клон БД',      data: timingItems.map(i => i.clone),     backgroundColor: 'rgba(168,85,247,0.85)',  stack: 'a' },
+            { label: 'Сброс данных', data: timingItems.map(i => i.reset),     backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' мс' } }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, title: { display: true, text: 'мс / тест (среднее)' }, beginAtZero: true }
+          }
+        }
+      });
+    })();
+
+    const TESTCONTAINERS_BASE_CLASSES = 14; // 7 сущностей × 2 (Service + API)
+
+    (function buildOneContainerChart() {
+      const MIN_M = 17, MAX_M = 117;
+      const rows = data.results
+        .filter(r =>
+          r.scenario.scenarioName === 'migrations' &&
+          r.scenario.approach === 'Testcontainers' &&
+          (r.scenario.migrationCount === MIN_M || r.scenario.migrationCount === MAX_M)
+        )
+        .sort((a, b) => a.scenario.migrationCount - b.scenario.migrationCount);
+      if (!rows.length) return;
+
+      const classScale        = rows[0].scenario.classScale;
+      const testCount         = classScale * BASE_TEST_COUNT;
+      const containerCount    = classScale * TESTCONTAINERS_BASE_CLASSES;
+      const testsPerContainer = BASE_TEST_COUNT / TESTCONTAINERS_BASE_CLASSES;
+
+      document.getElementById('subtitle-one-container').textContent =
+        `≈${Math.round(testsPerContainer)} тестов на контейнер, потоков=${rows[0].scenario.maxParallelThreads}` +
+        ` | overhead одного контейнера (мс)`;
+
+      const labels    = rows.map(r => r.scenario.migrationCount + ' mig');
+      const contData  = rows.map(r => +((r.containerSeconds || 0) * 1000 / containerCount).toFixed(1));
+      const migData   = rows.map(r => +((r.migrationSeconds || 0) * 1000 / testCount * testsPerContainer).toFixed(1));
+      const resetData = rows.map(r => +((r.resetSeconds     || 0) * 1000 / testCount * testsPerContainer).toFixed(1));
+
+      new Chart(document.getElementById('chart-one-container'), {
         type: 'bar',
         data: {
           labels,
           datasets: [
-            { label: 'Миграции',      data: migData,   backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
-            { label: 'Сброс данных',  data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
-            { label: 'Бизнес-логика', data: bizData,   backgroundColor: bizColors,               stack: 'a' },
+            { label: 'Старт контейнера',          data: contData,  backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { label: 'Миграции (×N тестов)',       data: migData,   backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
+            { label: 'EnsureDeleted (×N тестов)',  data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' мс' } }
+          },
+          scales: {
+            x: { stacked: true, title: { display: true, text: 'Количество миграций' } },
+            y: { stacked: true, title: { display: true, text: 'мс' }, beginAtZero: true }
+          }
+        }
+      });
+    })();
+
+    (function buildWholeRunChart() {
+      const rows = data.results
+        .filter(r => r.scenario.scenarioName === 'migrations' && r.scenario.approach === 'Testcontainers')
+        .sort((a, b) => a.scenario.migrationCount - b.scenario.migrationCount);
+      if (!rows.length) return;
+
+      document.getElementById('subtitle-whole-run').textContent =
+        `${rows[0].scenario.classScale * BASE_TEST_COUNT} тестов, потоков=${rows[0].scenario.maxParallelThreads}` +
+        ` | суммарное время по всем потокам (с) vs wall-clock`;
+
+      const labels    = rows.map(r => r.scenario.migrationCount + ' mig');
+      const contData  = rows.map(r => +((r.containerSeconds || 0).toFixed(1)));
+      const migData   = rows.map(r => +((r.migrationSeconds || 0).toFixed(1)));
+      const resetData = rows.map(r => +((r.resetSeconds     || 0).toFixed(1)));
+      const elapsed   = rows.map(r => +(r.elapsedSeconds.toFixed(1)));
+
+      new Chart(document.getElementById('chart-whole-run'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { type: 'bar',  label: 'Контейнеры',          data: contData,  backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { type: 'bar',  label: 'Миграции',              data: migData,   backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
+            { type: 'bar',  label: 'Сброс (EnsureDeleted)', data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+            { type: 'line', label: 'Wall-clock (elapsed)',  data: elapsed,
+              borderColor: 'rgb(239,68,68)', backgroundColor: 'rgba(239,68,68,0.1)',
+              borderWidth: 2, pointRadius: 5, tension: 0.15, fill: false },
           ]
         },
         options: {
@@ -176,12 +316,47 @@
             tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' с' } }
           },
           scales: {
-            x: { stacked: true },
+            x: { stacked: true, title: { display: true, text: 'Количество миграций' } },
             y: { stacked: true, title: { display: true, text: 'Время (секунды)' }, beginAtZero: true }
           }
         }
       });
     })();
+
+    function updateApproachVisibility() {
+      // Линейные графики: переключаем видимость датасетов по имени подхода
+      for (const chart of lineCharts) {
+        chart.data.datasets.forEach((ds, i) => {
+          chart.setDatasetVisibility(i, visibleApproaches.has(ds.label));
+        });
+        chart.update();
+      }
+
+      // Stacked bar: пересобираем labels и данные, фильтруя по видимым подходам
+      if (timingChart) {
+        const visible = timingItems.filter(item => visibleApproaches.has(item.approach));
+        timingChart.data.labels             = visible.map(i => i.label);
+        timingChart.data.datasets[0].data   = visible.map(i => i.container);
+        timingChart.data.datasets[1].data   = visible.map(i => i.migration);
+        timingChart.data.datasets[2].data   = visible.map(i => i.clone);
+        timingChart.data.datasets[3].data   = visible.map(i => i.reset);
+        timingChart.update();
+      }
+    }
+
+    document.querySelectorAll('.approach-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const approach = btn.dataset.approach;
+        if (visibleApproaches.has(approach)) {
+          visibleApproaches.delete(approach);
+          btn.classList.remove('active');
+        } else {
+          visibleApproaches.add(approach);
+          btn.classList.add('active');
+        }
+        updateApproachVisibility();
+      });
+    });
   </script>
 </body>
 </html>

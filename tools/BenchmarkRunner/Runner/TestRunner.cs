@@ -54,11 +54,11 @@ class TestRunner
     public BenchmarkResult Warmup(BenchmarkScenario scenario)
     {
         Console.Write(FormatPrefix("[WRM]", scenario));
-        var (elapsed, success, output, migrationSeconds, resetSeconds) = RunTest(scenario);
+        var (elapsed, success, output, migrationSeconds, resetSeconds, containerSeconds, cloneSeconds) = RunTest(scenario);
         Console.WriteLine(FormatSuffix(elapsed, success));
         if (!success)
             LogFailure(scenario, output);
-        return new BenchmarkResult(scenario, elapsed, migrationSeconds, resetSeconds, success);
+        return new BenchmarkResult(scenario, elapsed, migrationSeconds, resetSeconds, containerSeconds, cloneSeconds, success);
     }
 
     /// <summary>Запускает dotnet test для одного сценария и возвращает результат с временем.</summary>
@@ -67,14 +67,14 @@ class TestRunner
         _currentRun++;
         var tag = _totalRuns > 0 ? $"[{_currentRun,2}/{_totalRuns}]" : "[   ]";
         Console.Write(FormatPrefix(tag, scenario));
-        var (elapsed, success, output, migrationSeconds, resetSeconds) = RunTest(scenario);
+        var (elapsed, success, output, migrationSeconds, resetSeconds, containerSeconds, cloneSeconds) = RunTest(scenario);
         Console.WriteLine(FormatSuffix(elapsed, success));
         if (!success)
             LogFailure(scenario, output);
-        return new BenchmarkResult(scenario, elapsed, migrationSeconds, resetSeconds, success);
+        return new BenchmarkResult(scenario, elapsed, migrationSeconds, resetSeconds, containerSeconds, cloneSeconds, success);
     }
 
-    private (double Elapsed, bool Success, string Output, double MigrationSeconds, double ResetSeconds) RunTest(BenchmarkScenario scenario)
+    private (double Elapsed, bool Success, string Output, double MigrationSeconds, double ResetSeconds, double ContainerSeconds, double CloneSeconds) RunTest(BenchmarkScenario scenario)
     {
         var benchLogFile = Path.Combine(
             Path.GetTempPath(), $"bench-{Guid.NewGuid():N}.log");
@@ -97,8 +97,8 @@ class TestRunner
         if (File.Exists(benchLogFile))
             File.Delete(benchLogFile);
 
-        var (migrationMs, resetMs) = ParseBenchLines(benchContent);
-        return (sw.Elapsed.TotalSeconds, code == 0, output, migrationMs / 1000.0, resetMs / 1000.0);
+        var (migrationMs, resetMs, containerMs, cloneMs) = ParseBenchLines(benchContent);
+        return (sw.Elapsed.TotalSeconds, code == 0, output, migrationMs / 1000.0, resetMs / 1000.0, containerMs / 1000.0, cloneMs / 1000.0);
     }
 
     // После завершения dotnet test Ryuk ещё живёт в Docker и держит 172.17.0.2:8080.
@@ -116,9 +116,9 @@ class TestRunner
         }
     }
 
-    private static (long MigrationMs, long ResetMs) ParseBenchLines(string output)
+    private static (long MigrationMs, long ResetMs, long ContainerMs, long CloneMs) ParseBenchLines(string output)
     {
-        long migrationMs = 0, resetMs = 0;
+        long migrationMs = 0, resetMs = 0, containerMs = 0, cloneMs = 0;
         foreach (var line in output.Split('\n'))
         {
             var t = line.TrimEnd('\r');
@@ -128,8 +128,14 @@ class TestRunner
             else if (t.StartsWith("##BENCH[reset]=") &&
                 long.TryParse(t["##BENCH[reset]=".Length..], out var r))
                 resetMs += r;
+            else if (t.StartsWith("##BENCH[container]=") &&
+                long.TryParse(t["##BENCH[container]=".Length..], out var c))
+                containerMs += c;
+            else if (t.StartsWith("##BENCH[clone]=") &&
+                long.TryParse(t["##BENCH[clone]=".Length..], out var cl))
+                cloneMs += cl;
         }
-        return (migrationMs, resetMs);
+        return (migrationMs, resetMs, containerMs, cloneMs);
     }
 
     private static string FormatPrefix(string tag, BenchmarkScenario s) =>

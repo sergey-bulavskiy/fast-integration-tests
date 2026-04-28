@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Testcontainers.PostgreSql;
 
 namespace FastIntegrationTests.Tests.Infrastructure;
@@ -37,7 +38,10 @@ public static class RespawnContainerManager
                 "-c", "shared_buffers=128MB"
             )
             .Build();
+        var sw = Stopwatch.StartNew();
         await container.StartAsync();
+        sw.Stop();
+        BenchmarkLogger.Write("container", sw.ElapsedMilliseconds);
         return container;
     }
 }

@@ -22,8 +22,11 @@ public abstract class AppServiceTestBase : IAsyncLifetime
     {
         var state = await IntegresSqlContainerManager.GetStateAsync();
         _initializer = state.Initializer;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         _connectionString = await _initializer.CreateDatabaseGetConnectionString<ShopDbContext>(
             IntegresSqlDefaults.SeedingOptions);
+        sw.Stop();
+        BenchmarkLogger.Write("clone", sw.ElapsedMilliseconds);
         var options = new DbContextOptionsBuilder<ShopDbContext>()
             .UseNpgsql(_connectionString).Options;
         Context = new ShopDbContext(options);

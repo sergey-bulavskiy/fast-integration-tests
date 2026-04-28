@@ -8,11 +8,15 @@ namespace BenchmarkRunner.Models;
 /// <param name="ElapsedSeconds">Время выполнения в секундах</param>
 /// <param name="MigrationSeconds">Суммарное время миграций в секундах</param>
 /// <param name="ResetSeconds">Суммарное время сброса данных в секундах</param>
+/// <param name="ContainerSeconds">Суммарное время старта контейнеров в секундах</param>
+/// <param name="CloneSeconds">Суммарное время клонирования БД в секундах (IntegreSQL)</param>
 /// <param name="Success">Успешное ли выполнение</param>
 public record BenchmarkResult(
     BenchmarkScenario Scenario,
     double ElapsedSeconds,
     double MigrationSeconds,
     double ResetSeconds,
+    double ContainerSeconds,
+    double CloneSeconds,
     bool Success
 );

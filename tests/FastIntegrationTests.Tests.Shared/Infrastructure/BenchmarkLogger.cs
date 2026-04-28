@@ -22,7 +22,7 @@ public static class BenchmarkLogger
     }
 
     /// <summary>Добавляет строку ##BENCH[key]=ms в очередь (lock-free).</summary>
-    /// <param name="key">Ключ маркера: <c>migration</c> или <c>reset</c>.</param>
+    /// <param name="key">Ключ маркера: <c>migration</c>, <c>reset</c>, <c>container</c> или <c>clone</c>.</param>
     /// <param name="ms">Время в миллисекундах.</param>
     public static void Write(string key, long ms)
     {

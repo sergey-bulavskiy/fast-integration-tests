@@ -23,8 +23,11 @@ public abstract class ComponentTestBase : IAsyncLifetime
     {
         var state = await IntegresSqlContainerManager.GetStateAsync();
         _initializer = state.Initializer;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         _connectionString = await _initializer.CreateDatabaseGetConnectionString<ShopDbContext>(
             IntegresSqlDefaults.SeedingOptions);
+        sw.Stop();
+        BenchmarkLogger.Write("clone", sw.ElapsedMilliseconds);
 
         _factory = new TestWebApplicationFactory(_connectionString);
         Client = _factory.CreateClient();

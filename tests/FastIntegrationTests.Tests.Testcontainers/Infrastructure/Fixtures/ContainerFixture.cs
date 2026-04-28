@@ -21,6 +21,7 @@ public sealed class ContainerFixture : IAsyncLifetime
         // Изолированная сеть на каждую фикстуру — без неё Docker переиспользует IP (172.17.0.x)
         // для новых контейнеров быстрее, чем iptables успевает очистить правила предыдущих.
         // На мощных машинах с быстрым оборотом фикстур это приводит к "address already in use".
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         _network = new NetworkBuilder().Build();
         await _network.CreateAsync();
 
@@ -57,6 +58,8 @@ public sealed class ContainerFixture : IAsyncLifetime
             )
             .Build();
         await _container.StartAsync();
+        sw.Stop();
+        BenchmarkLogger.Write("container", sw.ElapsedMilliseconds);
         ConnectionString = _container.GetConnectionString();
     }
 
