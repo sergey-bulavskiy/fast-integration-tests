@@ -33,6 +33,8 @@
     .approach-btn[data-approach="Respawn"].active        { background: rgba(34,197,94,0.1);   }
     .approach-btn[data-approach="Testcontainers"] { border-color: rgb(239,68,68);   color: rgb(239,68,68);   }
     .approach-btn[data-approach="Testcontainers"].active { background: rgba(239,68,68,0.1);   }
+    .approach-btn[data-approach="TestcontainersShared"] { border-color: rgb(168,85,247); color: rgb(168,85,247); }
+    .approach-btn[data-approach="TestcontainersShared"].active { background: rgba(168,85,247,0.1); }
     .card {
       background: #fff; border-radius: 8px; padding: 24px;
       margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,.08);
@@ -53,6 +55,7 @@
     <button class="approach-btn active" data-approach="IntegreSQL">IntegreSQL</button>
     <button class="approach-btn active" data-approach="Respawn">Respawn</button>
     <button class="approach-btn active" data-approach="Testcontainers">Testcontainers</button>
+    <button class="approach-btn active" data-approach="TestcontainersShared">TestcontainersShared</button>
   </div>
 
   <div class="card">
@@ -97,6 +100,24 @@
     <canvas id="chart-whole-run"></canvas>
   </div>
 
+  <div class="card">
+    <h2>TestcontainersShared — один изолированный тест (мс)</h2>
+    <p class="subtitle" id="subtitle-shared-isolated-test"></p>
+    <canvas id="chart-shared-isolated-test"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>TestcontainersShared — суммарный overhead контейнера (мс)</h2>
+    <p class="subtitle" id="subtitle-shared-one-container"></p>
+    <canvas id="chart-shared-one-container"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>TestcontainersShared — весь прогон (с)</h2>
+    <p class="subtitle" id="subtitle-shared-whole-run"></p>
+    <canvas id="chart-shared-whole-run"></canvas>
+  </div>
+
   <script>
     const data = BENCHMARK_DATA;
     const BASE_TEST_COUNT = data.baseTestCount;
@@ -127,12 +148,13 @@
     })();
 
     const COLORS = {
-      IntegreSQL:     { border: 'rgb(59,130,246)',  bg: 'rgba(59,130,246,0.12)'  },
-      Respawn:        { border: 'rgb(34,197,94)',   bg: 'rgba(34,197,94,0.12)'   },
-      Testcontainers: { border: 'rgb(239,68,68)',   bg: 'rgba(239,68,68,0.12)'   },
+      IntegreSQL:           { border: 'rgb(59,130,246)',  bg: 'rgba(59,130,246,0.12)'  },
+      Respawn:              { border: 'rgb(34,197,94)',   bg: 'rgba(34,197,94,0.12)'   },
+      Testcontainers:       { border: 'rgb(239,68,68)',   bg: 'rgba(239,68,68,0.12)'   },
+      TestcontainersShared: { border: 'rgb(168,85,247)',  bg: 'rgba(168,85,247,0.12)'  },
     };
 
-    const APPROACHES = ['IntegreSQL', 'Respawn', 'Testcontainers'];
+    const APPROACHES = ['IntegreSQL', 'Respawn', 'Testcontainers', 'TestcontainersShared'];
 
     function formatSeconds(s) {
       if (s == null) return '';
@@ -242,6 +264,10 @@
     })();
 
     const TESTCONTAINERS_BASE_CLASSES = 14; // 7 сущностей × 2 (Service + API)
+    // TestcontainersShared: один контейнер на весь прогон (не на класс), поэтому
+    // деление на число классов не нужно. Константа на случай, если в будущем
+    // понадобится per-class расчёт для сравнения.
+    const TESTCONTAINERSSHARED_BASE_CLASSES = 14; // 7 сущностей × 2 (Service + API)
 
     (function buildIsolatedTestChart() {
       const MIN_M = 17, MAX_M = 117;
@@ -371,6 +397,146 @@
             { type: 'bar',  label: 'Сброс (EnsureDeleted)', data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
             { type: 'line', label: 'Wall-clock (elapsed)',  data: elapsed,
               borderColor: 'rgb(239,68,68)', backgroundColor: 'rgba(239,68,68,0.1)',
+              borderWidth: 2, pointRadius: 5, tension: 0.15, fill: false },
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + formatSeconds(ctx.parsed.y) } }
+          },
+          scales: {
+            x: { stacked: true, title: { display: true, text: 'Количество миграций' } },
+            y: { stacked: true, title: { display: true, text: 'Время (секунды)' }, beginAtZero: true }
+          }
+        }
+      });
+    })();
+
+    (function buildSharedIsolatedTestChart() {
+      const MIN_M = 17, MAX_M = 117;
+      const rows = data.results
+        .filter(r =>
+          r.scenario.scenarioName === 'migrations' &&
+          r.scenario.approach === 'TestcontainersShared' &&
+          (r.scenario.migrationCount === MIN_M || r.scenario.migrationCount === MAX_M)
+        )
+        .sort((a, b) => a.scenario.migrationCount - b.scenario.migrationCount);
+      if (!rows.length) return;
+
+      const classScale = rows[0].scenario.classScale;
+      const testCount  = classScale * BASE_TEST_COUNT;
+
+      document.getElementById('subtitle-shared-isolated-test').textContent =
+        `Амортизированная стоимость одного теста: контейнер один на весь прогон (${testCount} тестов).` +
+        ` Потоков=${rows[0].scenario.maxParallelThreads}.`;
+
+      const labels    = rows.map(r => r.scenario.migrationCount + ' миграций');
+      const contData  = rows.map(r => +((r.containerSeconds || 0) * 1000 / testCount).toFixed(1));
+      const migData   = rows.map(r => +((r.migrationSeconds || 0) * 1000 / testCount).toFixed(1));
+      const resetData = rows.map(r => +((r.resetSeconds     || 0) * 1000 / testCount).toFixed(1));
+
+      new Chart(document.getElementById('chart-shared-isolated-test'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Старт контейнера (амортизировано)', data: contData,  backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { label: 'Миграция (1×)',                     data: migData,   backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
+            { label: 'DROP DATABASE (1×)',                 data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' мс' } }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, title: { display: true, text: 'мс на один тест' }, beginAtZero: true }
+          }
+        }
+      });
+    })();
+
+    (function buildSharedOneContainerChart() {
+      const MIN_M = 17, MAX_M = 117;
+      const rows = data.results
+        .filter(r =>
+          r.scenario.scenarioName === 'migrations' &&
+          r.scenario.approach === 'TestcontainersShared' &&
+          (r.scenario.migrationCount === MIN_M || r.scenario.migrationCount === MAX_M)
+        )
+        .sort((a, b) => a.scenario.migrationCount - b.scenario.migrationCount);
+      if (!rows.length) return;
+
+      const classScale = rows[0].scenario.classScale;
+      const testCount  = classScale * BASE_TEST_COUNT;
+
+      document.getElementById('subtitle-shared-one-container').textContent =
+        `Суммарный overhead единственного контейнера за весь прогон: 1 старт + ${testCount} миграций + ${testCount} DROP DATABASE.` +
+        ` Потоков=${rows[0].scenario.maxParallelThreads}.`;
+
+      const labels    = rows.map(r => r.scenario.migrationCount + ' mig');
+      const contData  = rows.map(r => +((r.containerSeconds || 0) * 1000).toFixed(1));
+      const migData   = rows.map(r => +((r.migrationSeconds || 0) * 1000).toFixed(1));
+      const resetData = rows.map(r => +((r.resetSeconds     || 0) * 1000).toFixed(1));
+
+      new Chart(document.getElementById('chart-shared-one-container'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Старт контейнера — 1 раз',                           data: contData,  backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { label: `Миграции — ${testCount} раз (новая БД на каждый тест)`, data: migData, backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
+            { label: `DROP DATABASE — ${testCount} раз`,                    data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' мс' } }
+          },
+          scales: {
+            x: { stacked: true, title: { display: true, text: 'Количество миграций' } },
+            y: { stacked: true, title: { display: true, text: 'мс' }, beginAtZero: true }
+          }
+        }
+      });
+    })();
+
+    (function buildSharedWholeRunChart() {
+      const rows = data.results
+        .filter(r => r.scenario.scenarioName === 'migrations' && r.scenario.approach === 'TestcontainersShared')
+        .sort((a, b) => a.scenario.migrationCount - b.scenario.migrationCount);
+      if (!rows.length) return;
+
+      document.getElementById('subtitle-shared-whole-run').textContent =
+        `${rows[0].scenario.classScale * BASE_TEST_COUNT} тестов, потоков=${rows[0].scenario.maxParallelThreads}` +
+        ` | суммарное время по всем потокам (с) vs wall-clock`;
+
+      const labels    = rows.map(r => r.scenario.migrationCount + ' mig');
+      const contData  = rows.map(r => +((r.containerSeconds || 0).toFixed(1)));
+      const migData   = rows.map(r => +((r.migrationSeconds || 0).toFixed(1)));
+      const resetData = rows.map(r => +((r.resetSeconds     || 0).toFixed(1)));
+      const elapsed   = rows.map(r => +(r.elapsedSeconds.toFixed(1)));
+
+      new Chart(document.getElementById('chart-shared-whole-run'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { type: 'bar',  label: 'Контейнер',              data: contData,  backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { type: 'bar',  label: 'Миграции',                data: migData,   backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
+            { type: 'bar',  label: 'DROP DATABASE',           data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+            { type: 'line', label: 'Wall-clock (elapsed)',    data: elapsed,
+              borderColor: 'rgb(168,85,247)', backgroundColor: 'rgba(168,85,247,0.1)',
               borderWidth: 2, pointRadius: 5, tension: 0.15, fill: false },
           ]
         },

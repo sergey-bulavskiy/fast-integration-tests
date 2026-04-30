@@ -19,11 +19,12 @@ public class ClassScaleManager
             Path.Combine(repoRoot, "tests", "FastIntegrationTests.Tests.IntegreSQL"),
             Path.Combine(repoRoot, "tests", "FastIntegrationTests.Tests.Respawn"),
             Path.Combine(repoRoot, "tests", "FastIntegrationTests.Tests.Testcontainers"),
+            Path.Combine(repoRoot, "tests", "FastIntegrationTests.Tests.TestcontainersShared"),
         ];
     }
 
     /// <summary>
-    /// Генерирует <c>(scaleFactor - 1)</c> подклассов для каждого тест-класса в трёх проектах.
+    /// Генерирует <c>(scaleFactor - 1)</c> подклассов для каждого тест-класса в четырёх проектах.
     /// Каждый подкласс получает свой <c>IClassFixture</c> — честный per-class overhead.
     /// </summary>
     public void AddScaleClasses(int scaleFactor)
@@ -40,7 +41,7 @@ public class ClassScaleManager
         }
     }
 
-    /// <summary>Удаляет сгенерированные файлы из трёх тест-проектов.</summary>
+    /// <summary>Удаляет сгенерированные файлы из четырёх тест-проектов.</summary>
     public void RemoveScaleClasses()
     {
         foreach (var projectPath in _testProjectPaths)

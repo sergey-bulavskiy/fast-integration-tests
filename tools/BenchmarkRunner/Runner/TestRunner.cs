@@ -33,6 +33,7 @@ class TestRunner
             "tests/FastIntegrationTests.Tests.IntegreSQL",
             "tests/FastIntegrationTests.Tests.Respawn",
             "tests/FastIntegrationTests.Tests.Testcontainers",
+            "tests/FastIntegrationTests.Tests.TestcontainersShared",
         };
 
         foreach (var project in projects)

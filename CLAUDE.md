@@ -92,7 +92,6 @@ dotnet test tests/FastIntegrationTests.Tests.TestcontainersShared --filter "Full
 - Каждый тест создаёт свою БД `test_{guid}` через `SharedDbHandle.CreateAndMigrateAsync` и применяет `MigrateAsync`. То есть **миграции на каждый тест**.
 - В `DisposeAsync` — `NpgsqlConnection.ClearPool` + `DROP DATABASE` через admin-соединение.
 - TestServer и HttpClient создаются **на каждый тест**.
-- **Не включён в BenchmarkRunner** — добавить по аналогии с Testcontainers, заменив проект и суффикс классов `Container` → `Shared`.
 
 #### Сравнение по ключевым параметрам
 
@@ -123,7 +122,7 @@ dotnet test tests/FastIntegrationTests.Tests.TestcontainersShared --filter "Full
 
 ## Benchmark Runner
 
-Консольный инструмент для сравнительного бенчмарка трёх подходов по трём сценариям. Результат — HTML отчёт с интерактивными Chart.js графиками (имя с таймстемпом, например `benchmark-results/report-20260425-143022.html`).
+Консольный инструмент для сравнительного бенчмарка четырёх подходов по трём сценариям. Результат — HTML отчёт с интерактивными Chart.js графиками (имя с таймстемпом, например `benchmark-results/report-20260425-143022.html`).
 
 ```bash
 # Запуск с дефолтными параметрами (Docker должен быть запущен, ~1–2 часа)
@@ -154,7 +153,7 @@ dotnet run --project tools/BenchmarkRunner -- -t 16 -s 50
 | 2 — Масштаб числа тестов | 117 миграций, `--threads` | ClassScale: 1, 5, 10, 20, 50 |
 | 3 — Параллелизм | 117 миграций, `--scale` | потоков: 1, 2, 4, 8 |
 
-Итого 42 точки данных (5+5+4 × 3 подхода). Перед Сценарием 1 выполняется warmup-прогон (IntegreSQL, ClassScale=1), результат не сохраняется. Benchmark-миграции скрываются и восстанавливаются автоматически в Сценарии 1 — репозиторий возвращается в исходное состояние.
+Итого 56 точек данных (5+5+4 × 4 подхода). Перед Сценарием 1 выполняется warmup-прогон (IntegreSQL, ClassScale=1), результат не сохраняется. Benchmark-миграции скрываются и восстанавливаются автоматически в Сценарии 1 — репозиторий возвращается в исходное состояние.
 
 ### Benchmark-миграции
 
@@ -171,7 +170,7 @@ dotnet run --project tools/BenchmarkRunner -- -t 16 -s 50
 
 ### Выходные файлы
 
-- `benchmark-results/report-<timestamp>.html` — HTML отчёт: три линейных графика + stacked bar состава времени (gitignored)
+- `benchmark-results/report-<timestamp>.html` — HTML отчёт: три линейных графика сравнения подходов + аналитические stacked bar графики (gitignored)
 - `benchmark-results/results-<timestamp>.json` — сырые данные; перезаписывается после каждой точки данных (gitignored)
 
 Таймстемп формата `yyyyMMdd-HHmmss` фиксируется при старте `ReportGenerator` — оба файла одного прогона имеют одинаковый суффикс.
@@ -200,7 +199,7 @@ tools/BenchmarkRunner/
 - **Tests.IntegreSQL** (`tests/FastIntegrationTests.Tests.IntegreSQL/`) — интеграционные тесты через IntegreSQL (~195 тестов). Инфраструктура: `AppServiceTestBase`, `ComponentTestBase` (общий `IntegresSqlContainerManager` + `IntegresSqlDefaults` + `IntegresSqlState` живут в `Tests.Shared`). Тест-классы в папках по сущностям (`Categories/`, `Customers/`, `Discounts/`, `Orders/`, `Products/`, `Reviews/`, `Suppliers/`) — по 2 класса на сущность: `<Entity>ServiceTests` (сервисный уровень) и `<Entity>sApiTests` (HTTP-уровень). Итого 14 базовых классов на проект.
 - **Tests.Respawn** (`tests/FastIntegrationTests.Tests.Respawn/`) — интеграционные тесты через Respawn (~195 тестов). Инфраструктура: `RespawnServiceTestBase`, `RespawnApiTestBase`, `RespawnFixture`, `RespawnApiFixture`. Те же 7 папок и 14 классов с суффиксом `Respawn`: `<Entity>ServiceRespawnTests`, `<Entity>sApiRespawnTests`.
 - **Tests.Testcontainers** (`tests/FastIntegrationTests.Tests.Testcontainers/`) — интеграционные тесты через Testcontainers (~195 тестов). Инфраструктура: `ServiceTestBase`, `ApiTestBase` (общая логика), `ContainerServiceTestBase`, `ContainerApiTestBase` (объявляют `IClassFixture<ContainerFixture>`), `ContainerFixture`, `TestDbFactory`. Те же 7 папок и 14 классов с суффиксом `Container`: `<Entity>ServiceContainerTests`, `<Entity>sApiContainerTests`.
-- **Tests.TestcontainersShared** (`tests/FastIntegrationTests.Tests.TestcontainersShared/`) — интеграционные тесты через Testcontainers с контейнером на процесс (~195 тестов). Инфраструктура: `SharedContainerManager` (static Lazy, контейнер на процесс), `SharedDbHandle` (lifecycle одной БД: create+migrate/drop), `SharedServiceTestBase`, `SharedApiTestBase`. Те же 7 папок и 14 классов с суффиксом `Shared`: `<Entity>ServiceSharedTests`, `<Entity>sApiSharedTests`. **Не включён в BenchmarkRunner.**
+- **Tests.TestcontainersShared** (`tests/FastIntegrationTests.Tests.TestcontainersShared/`) — интеграционные тесты через Testcontainers с контейнером на процесс (~195 тестов). Инфраструктура: `SharedContainerManager` (static Lazy, контейнер на процесс), `SharedDbHandle` (lifecycle одной БД: create+migrate/drop), `SharedServiceTestBase`, `SharedApiTestBase`. Те же 7 папок и 14 классов с суффиксом `Shared`: `<Entity>ServiceSharedTests`, `<Entity>sApiSharedTests`.
 - **Tests.NUnit.IntegreSQL** (`tests/FastIntegrationTests.Tests.NUnit.IntegreSQL/`) — учебный мини-проект для команд на NUnit. Содержит `ProductServiceTests` и `ProductsApiTests` (~25 тестов), демонстрирующие маппинг xUnit-инфраструктуры IntegreSQL на NUnit: `IAsyncLifetime` → `[SetUp]` / `[TearDown]`, constraint-model ассерты (`Assert.That(value, Is.EqualTo(...))`), `[Parallelizable]` + `LevelOfParallelism` на уровне assembly. В BenchmarkRunner и в PowerShell-скрипты не включён — это пример, а не альтернативный стек.
 
 ## Локальная разработка
@@ -261,7 +260,7 @@ cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/Fast
 
 ### Инфраструктура для NUnit-тестов
 
-Сейчас все три подхода (IntegreSQL / Respawn / Testcontainers) реализованы только для xUnit. У NUnit другая модель фикстур и параллелизма — стоит сделать параллельную инфраструктуру, чтобы:
+Сейчас все четыре подхода (IntegreSQL / Respawn / Testcontainers / TestcontainersShared) реализованы только для xUnit. У NUnit другая модель фикстур и параллелизма — стоит сделать параллельную инфраструктуру, чтобы:
 
 - Показать на докладе, что подходы фреймворк-агностичные — это не свойство xUnit.
 - Сравнить накладные расходы фреймворков на одинаковом наборе тестов (xUnit vs NUnit на тех же сценариях бенчмарка).
