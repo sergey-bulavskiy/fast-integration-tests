@@ -7,10 +7,10 @@ namespace FastIntegrationTests.Tests.Infrastructure.IntegreSQL;
 /// <summary>
 /// Общие настройки IntegreSQL для всех тест-проектов.
 /// </summary>
-internal static class IntegresSqlDefaults
+public static class IntegresSqlDefaults
 {
     /// <summary>Параметры сидирования шаблонной БД магазина.</summary>
-    internal static readonly DatabaseSeedingOptions<ShopDbContext> SeedingOptions =
+    public static readonly DatabaseSeedingOptions<ShopDbContext> SeedingOptions =
         new(
             Name: "shop-default",
             SeedingFunction: async ctx =>
