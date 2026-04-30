@@ -68,7 +68,7 @@ public static class IntegresSqlContainerManager
         // ⚠ НИКОГДА не переносить в продакшн — при сбое питания/краше возможна потеря данных.
         var pgContainer = new PostgreSqlBuilder()
             .WithImage("postgres:16-alpine")
-            // .WithTmpfsMount("/var/lib/postgresql/data")  // см. блок-комментарий выше
+            .WithTmpfsMount("/var/lib/postgresql/data")
             .WithNetwork(network)
             .WithNetworkAliases("postgres")
             .WithCommand(
