@@ -80,6 +80,12 @@
   </div>
 
   <div class="card">
+    <h2>Testcontainers — один изолированный тест (мс)</h2>
+    <p class="subtitle" id="subtitle-isolated-test"></p>
+    <canvas id="chart-isolated-test"></canvas>
+  </div>
+
+  <div class="card">
     <h2>Testcontainers — один контейнер (мс)</h2>
     <p class="subtitle" id="subtitle-one-container"></p>
     <canvas id="chart-one-container"></canvas>
@@ -128,6 +134,14 @@
 
     const APPROACHES = ['IntegreSQL', 'Respawn', 'Testcontainers'];
 
+    function formatSeconds(s) {
+      if (s == null) return '';
+      if (s < 60) return s.toFixed(1) + ' с';
+      const min = Math.floor(s / 60);
+      const sec = Math.round(s - min * 60);
+      return sec === 0 ? `${min} мин` : `${min} мин ${sec} с`;
+    }
+
     const visibleApproaches = new Set(APPROACHES);
     const lineCharts = [];
     let timingChart = null;
@@ -160,7 +174,7 @@
           plugins: {
             legend: { position: 'top' },
             tooltip: {
-              callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' с' }
+              callbacks: { label: ctx => ctx.dataset.label + ': ' + formatSeconds(ctx.parsed.y) }
             }
           },
           scales: {
@@ -229,6 +243,55 @@
 
     const TESTCONTAINERS_BASE_CLASSES = 14; // 7 сущностей × 2 (Service + API)
 
+    (function buildIsolatedTestChart() {
+      const MIN_M = 17, MAX_M = 117;
+      const rows = data.results
+        .filter(r =>
+          r.scenario.scenarioName === 'migrations' &&
+          r.scenario.approach === 'Testcontainers' &&
+          (r.scenario.migrationCount === MIN_M || r.scenario.migrationCount === MAX_M)
+        )
+        .sort((a, b) => a.scenario.migrationCount - b.scenario.migrationCount);
+      if (!rows.length) return;
+
+      const classScale     = rows[0].scenario.classScale;
+      const testCount      = classScale * BASE_TEST_COUNT;
+      const containerCount = classScale * TESTCONTAINERS_BASE_CLASSES;
+
+      document.getElementById('subtitle-isolated-test').textContent =
+        `Гипотетический worst case: каждый тест поднимает собственный контейнер.` +
+        ` Бар = старт контейнера + 1 миграция + 1 сброс БД. Потоков=${rows[0].scenario.maxParallelThreads}.`;
+
+      const labels    = rows.map(r => r.scenario.migrationCount + ' миграций');
+      const contData  = rows.map(r => +((r.containerSeconds || 0) * 1000 / containerCount).toFixed(1));
+      const migData   = rows.map(r => +((r.migrationSeconds || 0) * 1000 / testCount).toFixed(1));
+      const resetData = rows.map(r => +((r.resetSeconds     || 0) * 1000 / testCount).toFixed(1));
+
+      new Chart(document.getElementById('chart-isolated-test'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Старт контейнера', data: contData,  backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { label: 'Миграция (1×)',    data: migData,   backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
+            { label: 'Сброс БД (1×)',    data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' мс' } }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, title: { display: true, text: 'мс на один тест' }, beginAtZero: true }
+          }
+        }
+      });
+    })();
+
     (function buildOneContainerChart() {
       const MIN_M = 17, MAX_M = 117;
       const rows = data.results
@@ -244,10 +307,13 @@
       const testCount         = classScale * BASE_TEST_COUNT;
       const containerCount    = classScale * TESTCONTAINERS_BASE_CLASSES;
       const testsPerContainer = BASE_TEST_COUNT / TESTCONTAINERS_BASE_CLASSES;
+      const tpc               = Math.round(testsPerContainer);
 
       document.getElementById('subtitle-one-container').textContent =
-        `≈${Math.round(testsPerContainer)} тестов на контейнер, потоков=${rows[0].scenario.maxParallelThreads}` +
-        ` | overhead одного контейнера (мс)`;
+        `Бар = суммарное время за всю жизнь одного контейнера: 1 старт + ${tpc} миграций + ${tpc} сбросов БД` +
+        ` (между тестами внутри класса). На контейнер приходится ≈${tpc} тестов` +
+        ` (${BASE_TEST_COUNT} тестов / ${TESTCONTAINERS_BASE_CLASSES} классов = ${TESTCONTAINERS_BASE_CLASSES} контейнеров).` +
+        ` Потоков=${rows[0].scenario.maxParallelThreads}.`;
 
       const labels    = rows.map(r => r.scenario.migrationCount + ' mig');
       const contData  = rows.map(r => +((r.containerSeconds || 0) * 1000 / containerCount).toFixed(1));
@@ -259,9 +325,9 @@
         data: {
           labels,
           datasets: [
-            { label: 'Старт контейнера',          data: contData,  backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
-            { label: 'Миграции (×N тестов)',       data: migData,   backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
-            { label: 'EnsureDeleted (×N тестов)',  data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
+            { label: 'Старт контейнера — 1 раз',                       data: contData,  backgroundColor: 'rgba(251,146,60,0.85)', stack: 'a' },
+            { label: `Миграции — ${tpc} раз (новая БД на каждый тест)`, data: migData,   backgroundColor: 'rgba(99,102,241,0.85)',  stack: 'a' },
+            { label: `Сброс БД — ${tpc} раз (после каждого теста)`,     data: resetData, backgroundColor: 'rgba(250,204,21,0.85)', stack: 'a' },
           ]
         },
         options: {
@@ -313,7 +379,7 @@
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { position: 'top' },
-            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' с' } }
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + formatSeconds(ctx.parsed.y) } }
           },
           scales: {
             x: { stacked: true, title: { display: true, text: 'Количество миграций' } },
