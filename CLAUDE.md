@@ -141,6 +141,7 @@ dotnet run --project tools/BenchmarkRunner -- -t 16 -s 50
 |---|---|---|
 | `--scale N` / `-s N` | 12 | Сценарии 1 и 3 (масштаб классов) |
 | `--threads N` / `-t N` | 8 | Сценарии 1 и 2 (потоки не варьируются) |
+| `--cooldown N` / `-c N` | 8 | Все сценарии (пауза перед каждым `dotnet test`, кроме первого) |
 
 > **Важно:** константа `BaseTestCount` в `tools/BenchmarkRunner/Program.cs` — хардкод.
 > При добавлении или удалении тест-методов обновить вручную.

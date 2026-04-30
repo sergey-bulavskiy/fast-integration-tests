@@ -24,14 +24,6 @@ public static class RespawnContainerManager
 
     private static async Task<PostgreSqlContainer> StartAsync()
     {
-        // Пауза ДО старта контейнера. Защищает от хвоста зачистки предыдущего
-        // процесса (или предыдущей фикстуры, если несколько в одном процессе):
-        // iptables NAT-правила, освобождение IP в bridge-подсети и хост-портов
-        // Docker daemon делает АСИНХРОННО после удаления контейнера. docker ps
-        // уже не показывает Ryuk, но ядро ещё держит стейл-правила. Без этой
-        // паузы новый bind() ловит "address already in use".
-        await Task.Delay(TimeSpan.FromSeconds(10));
-
         // Изолированная сеть на менеджер. Внутри Respawn-процесса контейнер один,
         // но сеть всё равно полезна: при network.DisposeAsync() Docker убирает
         // все iptables-правила сети атомарно, не оставляя стейлов для следующего

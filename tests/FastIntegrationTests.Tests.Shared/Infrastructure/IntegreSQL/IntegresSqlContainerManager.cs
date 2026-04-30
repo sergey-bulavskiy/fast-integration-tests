@@ -26,14 +26,6 @@ public static class IntegresSqlContainerManager
 
     private static async Task<IntegresSqlState> InitializeAsync()
     {
-        // Пауза ДО старта контейнера. Защищает от хвоста зачистки предыдущего
-        // процесса (или предыдущей фикстуры, если несколько в одном процессе):
-        // iptables NAT-правила, освобождение IP в bridge-подсети и хост-портов
-        // Docker daemon делает АСИНХРОННО после удаления контейнера. docker ps
-        // уже не показывает Ryuk, но ядро ещё держит стейл-правила. Без этой
-        // паузы новый bind() ловит "address already in use".
-        await Task.Delay(TimeSpan.FromSeconds(10));
-
         var network = new NetworkBuilder().Build();
         await network.CreateAsync();
 

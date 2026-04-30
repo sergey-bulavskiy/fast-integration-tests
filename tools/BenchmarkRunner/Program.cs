@@ -8,6 +8,7 @@ using BenchmarkRunner.Scale;
 // ─── Аргументы командной строки ────────────────────────────────────────────
 int defaultThreads     = 8;  // для сценариев, где потоки не варьируются (1 и 2)
 int defaultClassScale  = 12; // для сценариев, где масштаб не варьируется (1 и 3)
+int cooldownSeconds    = 8;  // пауза перед каждым dotnet test, кроме первого
 const int TimeoutMinutes = 120; // верхняя крышка одного прогона dotnet test
 
 // хардкод — обновить при добавлении/удалении тест-методов в тест-проектах
@@ -22,10 +23,12 @@ for (var i = 0; i < args.Length - 1; i++)
         defaultClassScale = s;
     if (args[i] is "--threads" or "-t" && int.TryParse(args[i + 1], out var t) && t > 0)
         defaultThreads = t;
+    if (args[i] is "--cooldown" or "-c" && int.TryParse(args[i + 1], out var c) && c >= 0)
+        cooldownSeconds = c;
 }
 
 var repoRoot         = FindRepoRoot();
-var runner           = new TestRunner(repoRoot, TimeSpan.FromMinutes(TimeoutMinutes));
+var runner           = new TestRunner(repoRoot, TimeSpan.FromMinutes(TimeoutMinutes), TimeSpan.FromSeconds(cooldownSeconds));
 var migrationManager = new MigrationManager(repoRoot);
 var classScaleManager = new ClassScaleManager(repoRoot);
 var reportGenerator  = new ReportGenerator(repoRoot);
@@ -43,7 +46,7 @@ Console.WriteLine("=== Integration Test Benchmark Runner ===");
 Console.WriteLine($"Repo:    {repoRoot}");
 Console.WriteLine($"Machine: {Environment.MachineName}");
 Console.WriteLine($"Time:    {DateTime.Now:yyyy-MM-dd HH:mm}");
-Console.WriteLine($"Config:  threads={defaultThreads}, scale={defaultClassScale}, timeout={TimeoutMinutes}m");
+Console.WriteLine($"Config:  threads={defaultThreads}, scale={defaultClassScale}, cooldown={cooldownSeconds}s, timeout={TimeoutMinutes}m");
 
 if (testRespawn)
 {

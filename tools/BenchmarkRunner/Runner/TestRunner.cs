@@ -14,11 +14,18 @@ class TestRunner
     private int _totalRuns;
     private int _currentRun;
 
-    /// <summary>Инициализирует runner с корневой директорией репозитория и таймаутом одного прогона.</summary>
-    public TestRunner(string repoRoot, TimeSpan timeout)
+    private readonly TimeSpan _cooldown;
+    private bool _firstRun = true;
+
+    /// <summary>Инициализирует runner с корневой директорией репозитория, таймаутом и cooldown между прогонами.</summary>
+    /// <param name="repoRoot">Корневая директория репозитория.</param>
+    /// <param name="timeout">Максимальное время одного прогона dotnet test.</param>
+    /// <param name="cooldown">Пауза перед каждым dotnet test, кроме первого — даёт Docker'у время дочистить iptables/NAT после предыдущего процесса.</param>
+    public TestRunner(string repoRoot, TimeSpan timeout, TimeSpan cooldown)
     {
         _repoRoot = repoRoot;
         _timeout  = timeout;
+        _cooldown = cooldown;
         _logPath  = Path.Combine(repoRoot, "benchmark-results", "last-failure.log");
     }
 
@@ -54,6 +61,7 @@ class TestRunner
     /// <summary>Warmup-прогон — не учитывается в счётчике прогресса и не сохраняется в отчёт.</summary>
     public BenchmarkResult Warmup(BenchmarkScenario scenario)
     {
+        ApplyCooldown();
         Console.Write(FormatPrefix("[WRM]", scenario));
         var (elapsed, success, output, migrationSeconds, resetSeconds, containerSeconds, cloneSeconds) = RunTest(scenario);
         Console.WriteLine(FormatSuffix(elapsed, success));
@@ -65,6 +73,7 @@ class TestRunner
     /// <summary>Запускает dotnet test для одного сценария и возвращает результат с временем.</summary>
     public BenchmarkResult Run(BenchmarkScenario scenario)
     {
+        ApplyCooldown();
         _currentRun++;
         var tag = _totalRuns > 0 ? $"[{_currentRun,2}/{_totalRuns}]" : "[   ]";
         Console.Write(FormatPrefix(tag, scenario));
@@ -100,6 +109,17 @@ class TestRunner
 
         var (migrationMs, resetMs, containerMs, cloneMs) = ParseBenchLines(benchContent);
         return (sw.Elapsed.TotalSeconds, code == 0, output, migrationMs / 1000.0, resetMs / 1000.0, containerMs / 1000.0, cloneMs / 1000.0);
+    }
+
+    private void ApplyCooldown()
+    {
+        if (_firstRun)
+        {
+            _firstRun = false;
+            return;
+        }
+        if (_cooldown > TimeSpan.Zero)
+            Thread.Sleep(_cooldown);
     }
 
     // После завершения dotnet test Ryuk ещё живёт в Docker и держит 172.17.0.2:8080.
