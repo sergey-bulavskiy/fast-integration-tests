@@ -50,11 +50,13 @@ dotnet test
 dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
 dotnet test tests/FastIntegrationTests.Tests.Respawn
 dotnet test tests/FastIntegrationTests.Tests.Testcontainers
+dotnet test tests/FastIntegrationTests.Tests.TestcontainersShared
 
-# Запустить тесты отдельного класса (примеры — IntegreSQL без суффикса, у Respawn/Testcontainers — Respawn/Container)
+# Запустить тесты отдельного класса (примеры — IntegreSQL без суффикса, у Respawn/Testcontainers — Respawn/Container/Shared)
 dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --filter "FullyQualifiedName~ProductServiceTests"
 dotnet test tests/FastIntegrationTests.Tests.Testcontainers --filter "FullyQualifiedName~OrdersApiContainerTests"
 dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedName~CategoryServiceRespawnTests"
+dotnet test tests/FastIntegrationTests.Tests.TestcontainersShared --filter "FullyQualifiedName~CategoriesApiSharedTests"
 ```
 
 ### Как работают тесты
@@ -63,7 +65,7 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 
 **Инфраструктура скрыта:** тесты работают только через `IProductService` / `IOrderService` (сервисный уровень) или `HttpClient` (HTTP-уровень). Вся работа с БД — в базовых классах.
 
-#### Три подхода к изоляции
+#### Четыре подхода к изоляции
 
 **IntegreSQL** (`AppServiceTestBase` / `ComponentTestBase`):
 - Один пара контейнеров (PostgreSQL + IntegreSQL) на весь процесс — `IntegresSqlContainerManager` (static Lazy).
@@ -85,15 +87,22 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 - В `DisposeAsync` вызывается `EnsureDeletedAsync` — БД дропается.
 - TestServer и HttpClient создаются **на каждый тест**.
 
+**TestcontainersShared** (`SharedServiceTestBase` / `SharedApiTestBase`):
+- Один контейнер PostgreSQL **на весь процесс** — `SharedContainerManager` (static Lazy). Нет `IClassFixture`.
+- Каждый тест создаёт свою БД `test_{guid}` через `SharedDbHandle.CreateAndMigrateAsync` и применяет `MigrateAsync`. То есть **миграции на каждый тест**.
+- В `DisposeAsync` — `NpgsqlConnection.ClearPool` + `DROP DATABASE` через admin-соединение.
+- TestServer и HttpClient создаются **на каждый тест**.
+- **Не включён в BenchmarkRunner** — добавить по аналогии с Testcontainers, заменив проект и суффикс классов `Container` → `Shared`.
+
 #### Сравнение по ключевым параметрам
 
-| | IntegreSQL | Respawn | Testcontainers |
-|---|---|---|---|
-| Контейнер | 1 на процесс (PG + IntegreSQL) | 1 на процесс | 1 на класс |
-| Миграции | 1 раз на процесс | 1 раз на класс | **на каждый тест** |
-| Сброс данных | возврат клона в пул (recreate) | DELETE по FK-порядку | новая БД `test_{guid}` + `MigrateAsync`, потом `EnsureDeleted` |
-| TestServer (API) | новый на каждый тест | 1 на класс | новый на каждый тест |
-| Параллелизм внутри класса | да | нет | да |
+| | IntegreSQL | Respawn | Testcontainers | TestcontainersShared |
+|---|---|---|---|---|
+| Контейнер | 1 на процесс (PG + IntegreSQL) | 1 на процесс | 1 на класс | 1 на процесс |
+| Миграции | 1 раз на процесс | 1 раз на класс | **на каждый тест** | **на каждый тест** |
+| Сброс данных | возврат клона в пул (recreate) | DELETE по FK-порядку | новая БД `test_{guid}` + `MigrateAsync`, потом `EnsureDeleted` | новая БД `test_{guid}` + `MigrateAsync`, потом `ClearPool` + `DROP DATABASE` |
+| TestServer (API) | новый на каждый тест | 1 на класс | новый на каждый тест | новый на каждый тест |
+| Параллелизм внутри класса | да | нет | да | да |
 
 ### PowerShell скрипты для запуска тестов
 
@@ -103,6 +112,7 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 # Бизнес-тесты каждого подхода (по умолчанию: 4 потока)
 .\run-integresql.ps1
 .\run-testcontainers.ps1
+.\run-testcontainers-shared.ps1
 .\run-respawn.ps1
 
 # Переопределить параметры
@@ -190,6 +200,7 @@ tools/BenchmarkRunner/
 - **Tests.IntegreSQL** (`tests/FastIntegrationTests.Tests.IntegreSQL/`) — интеграционные тесты через IntegreSQL (~195 тестов). Инфраструктура: `AppServiceTestBase`, `ComponentTestBase`, `IntegreSQL/IntegresSqlContainerManager` + `IntegresSqlDefaults` + `IntegresSqlState`. Тест-классы в папках по сущностям (`Categories/`, `Customers/`, `Discounts/`, `Orders/`, `Products/`, `Reviews/`, `Suppliers/`) — по 2 класса на сущность: `<Entity>ServiceTests` (сервисный уровень) и `<Entity>sApiTests` (HTTP-уровень). Итого 14 базовых классов на проект.
 - **Tests.Respawn** (`tests/FastIntegrationTests.Tests.Respawn/`) — интеграционные тесты через Respawn (~195 тестов). Инфраструктура: `RespawnServiceTestBase`, `RespawnApiTestBase`, `RespawnFixture`, `RespawnApiFixture`. Те же 7 папок и 14 классов с суффиксом `Respawn`: `<Entity>ServiceRespawnTests`, `<Entity>sApiRespawnTests`.
 - **Tests.Testcontainers** (`tests/FastIntegrationTests.Tests.Testcontainers/`) — интеграционные тесты через Testcontainers (~195 тестов). Инфраструктура: `ServiceTestBase`, `ApiTestBase` (общая логика), `ContainerServiceTestBase`, `ContainerApiTestBase` (объявляют `IClassFixture<ContainerFixture>`), `ContainerFixture`, `TestDbFactory`. Те же 7 папок и 14 классов с суффиксом `Container`: `<Entity>ServiceContainerTests`, `<Entity>sApiContainerTests`.
+- **Tests.TestcontainersShared** (`tests/FastIntegrationTests.Tests.TestcontainersShared/`) — интеграционные тесты через Testcontainers с контейнером на процесс (~195 тестов). Инфраструктура: `SharedContainerManager` (static Lazy, контейнер на процесс), `SharedDbHandle` (lifecycle одной БД: create+migrate/drop), `SharedServiceTestBase`, `SharedApiTestBase`. Те же 7 папок и 14 классов с суффиксом `Shared`: `<Entity>ServiceSharedTests`, `<Entity>sApiSharedTests`. **Не включён в BenchmarkRunner.**
 
 ## Локальная разработка
 

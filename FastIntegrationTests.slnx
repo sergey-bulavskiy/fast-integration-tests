@@ -9,5 +9,6 @@
     <Project Path="tests/FastIntegrationTests.Tests.IntegreSQL/FastIntegrationTests.Tests.IntegreSQL.csproj" />
     <Project Path="tests/FastIntegrationTests.Tests.Respawn/FastIntegrationTests.Tests.Respawn.csproj" />
     <Project Path="tests/FastIntegrationTests.Tests.Testcontainers/FastIntegrationTests.Tests.Testcontainers.csproj" />
+    <Project Path="tests/FastIntegrationTests.Tests.TestcontainersShared/FastIntegrationTests.Tests.TestcontainersShared.csproj" />
   </Folder>
 </Solution>
