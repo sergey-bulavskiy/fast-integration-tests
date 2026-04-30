@@ -37,26 +37,23 @@ public static class IntegresSqlContainerManager
         var network = new NetworkBuilder().Build();
         await network.CreateAsync();
 
-        // ── Опциональный tmpfs для data-каталога PostgreSQL ──────────────────────────
-        // Если на твоей машине бенчмарк IntegreSQL падает массой Npgsql `EndOfStream`
-        // на больших scale (s=50+), а disk latency в момент падения уходит в полку —
-        // расскоментируй WithTmpfsMount ниже.
+        // ── tmpfs для data-каталога PostgreSQL (включён по умолчанию) ────────────────
+        // Data-каталог PG смонтирован как tmpfs (RAM). Это убирает диск из критического
+        // пути CREATE DATABASE TEMPLATE и делает бенчмарк нечувствительным к локальной
+        // дисковой подсистеме (троттлинг SSD, антивирус, WSL2 backing disk).
         //
-        // Симптом: ~thousands × `Npgsql.NpgsqlException : Exception while reading
-        // from stream` → inner `EndOfStreamException : Attempted to read past the
-        // end of the stream`. Стек у всех — на стадии `NpgsqlConnection.Open`
-        // внутри `WaitUntilDatabaseIsCreated` или первого запроса EF.
+        // Без tmpfs на больших scale (s=50+) бенчмарк падает массой
+        // `Npgsql.NpgsqlException : Exception while reading from stream` (inner
+        // `EndOfStreamException`). Причина — синхронное копирование data-файлов
+        // в CREATE DATABASE TEMPLATE: fsync=off его не ускоряет (он только про WAL).
+        // На медленном диске PG держит ACCESS EXCLUSIVE lock на pg_database дольше
+        // Npgsql Connection Timeout (15с) — параллельные коннекты ловят TCP RST.
         //
-        // Причина: при scale=50 за один прогон делается ~9800 CREATE DATABASE
-        // TEMPLATE. Это синхронные filesystem-операции — fsync=off их не ускоряет
-        // (он отключает только sync для WAL, а не для data-файлов). На медленном
-        // или троттлящемся диске PostgreSQL держит ACCESS EXCLUSIVE lock на
-        // pg_database дольше Npgsql Connection Timeout (15с) — параллельные
-        // коннекты ловят TCP RST на Open.
+        // tmpfs кладёт всё в page cache (RAM): CREATE DATABASE становится memcpy.
+        // Стоит ~1–1.5 GB RAM при scale=50; данные эфемерны (контейнер уничтожается
+        // между прогонами) — для тестов это безопасно.
         //
-        // Решение: tmpfs кладёт data-файлы в page cache (RAM). CREATE DATABASE
-        // становится memcpy. Стоит ~1–1.5 GB RAM при scale=50; данные эфемерны
-        // (контейнер уничтожается между прогонами) — для тестов это безопасно.
+        // Если RAM в обрез — закомментируй WithTmpfsMount ниже.
         //
         // Подробнее: docs/superpowers/specs/2026-04-30-postgres-tmpfs-toggle-design.md
 
