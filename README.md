@@ -4,11 +4,14 @@
 
 Демонстрирует и сравнивает три подхода к изоляции тестов в паттерне **database-per-test**:
 
-| Подход | Изоляция | Скорость сброса |
-|--------|----------|-----------------|
-| **IntegreSQL** | клон шаблонной БД на каждый тест | ~5 мс |
-| **Respawn** | DELETE по FK-порядку между тестами | ~1 мс |
-| **Testcontainers** | EnsureDeleted + MigrateAsync на каждый тест | ~200 мс |
+| Подход | Изоляция | Время на тест* |
+|--------|----------|----------------|
+| **IntegreSQL** | клон шаблонной БД на каждый тест | ~50 мс |
+| **Respawn** | DELETE по FK-порядку между тестами | ~20 мс |
+| **Testcontainers** | новая БД + MigrateAsync на каждый тест | 240–1700 мс** |
+
+\* Wall-clock на тест из реального бенчмарка (classScale=12, 2676 тестов, 8 потоков).
+\** Зависит от числа миграций: 17 миграций → 240 мс, 117 миграций → 1700 мс.
 
 ---
 
@@ -152,9 +155,9 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn
 dotnet test tests/FastIntegrationTests.Tests.Testcontainers
 
 # Отдельный тест-класс (примеры)
-dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --filter "FullyQualifiedName~ProductServiceCrTests"
-dotnet test tests/FastIntegrationTests.Tests.Testcontainers --filter "FullyQualifiedName~OrdersApiUdContainerTests"
-dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedName~CategoryServiceCrRespawnTests"
+dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --filter "FullyQualifiedName~ProductServiceTests"
+dotnet test tests/FastIntegrationTests.Tests.Testcontainers --filter "FullyQualifiedName~OrdersApiContainerTests"
+dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedName~CategoryServiceRespawnTests"
 ```
 
 ### PowerShell скрипты (с замером времени)
@@ -173,9 +176,9 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 
 | | IntegreSQL | Respawn | Testcontainers |
 |---|---|---|---|
-| Контейнер | 1 на процесс | 1 на процесс | 1 на класс |
-| Миграции | 1 раз (весь процесс) | 1 раз на класс | 1 раз на класс |
-| Сброс данных | удаление клона ~5 мс | DELETE по FK-порядку ~1 мс | EnsureDeleted ~200 мс |
+| Контейнер | 1 на процесс (PG + IntegreSQL) | 1 на процесс | 1 на класс |
+| Миграции | 1 раз (весь процесс) | 1 раз на класс | 1 раз на тест |
+| Сброс между тестами | клон шаблона из пула ~50 мс | DELETE по FK-порядку ~20 мс | новая БД + MigrateAsync ~240–1700 мс |
 | Параллелизм внутри класса | да | нет | да |
 
 ---
@@ -223,10 +226,10 @@ src/
 
 tests/
 ├── FastIntegrationTests.Tests.Shared/   # Общая инфраструктура: TestWebApplicationFactory
-├── FastIntegrationTests.Tests.IntegreSQL/   # 165 тестов: Categories/, Customers/, Discounts/,
-│                                            #             Orders/, Products/, Reviews/, Suppliers/
-├── FastIntegrationTests.Tests.Respawn/      # 165 тестов: те же 7 папок
-└── FastIntegrationTests.Tests.Testcontainers/  # 165 тестов: те же 7 папок
+├── FastIntegrationTests.Tests.IntegreSQL/   # ~195 тестов: Categories/, Customers/, Discounts/,
+│                                            #              Orders/, Products/, Reviews/, Suppliers/
+├── FastIntegrationTests.Tests.Respawn/      # ~195 тестов: те же 7 папок
+└── FastIntegrationTests.Tests.Testcontainers/  # ~195 тестов: те же 7 папок
 
 tools/
 └── BenchmarkRunner/                     # Консольный инструмент бенчмарка

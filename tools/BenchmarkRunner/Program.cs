@@ -12,7 +12,7 @@ const int TimeoutMinutes = 120; // верхняя крышка одного пр
 
 // хардкод — обновить при добавлении/удалении тест-методов в тест-проектах
 // проверить: dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --list-tests 2>&1 | grep "FastIntegrationTests.Tests.IntegreSQL" | wc -l
-const int BaseTestCount = 223;
+const int BaseTestCount = 195;
 
 bool testRespawn = args.Contains("--test-respawn");
 

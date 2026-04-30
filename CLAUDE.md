@@ -51,10 +51,10 @@ dotnet test tests/FastIntegrationTests.Tests.IntegreSQL
 dotnet test tests/FastIntegrationTests.Tests.Respawn
 dotnet test tests/FastIntegrationTests.Tests.Testcontainers
 
-# Запустить тесты отдельного класса (примеры — суффиксы Cr/Ud, подход без суффикса/Respawn/Container)
-dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --filter "FullyQualifiedName~ProductServiceCrTests"
-dotnet test tests/FastIntegrationTests.Tests.Testcontainers --filter "FullyQualifiedName~OrdersApiUdContainerTests"
-dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedName~CategoryServiceUdRespawnTests"
+# Запустить тесты отдельного класса (примеры — IntegreSQL без суффикса, у Respawn/Testcontainers — Respawn/Container)
+dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --filter "FullyQualifiedName~ProductServiceTests"
+dotnet test tests/FastIntegrationTests.Tests.Testcontainers --filter "FullyQualifiedName~OrdersApiContainerTests"
+dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedName~CategoryServiceRespawnTests"
 ```
 
 ### Как работают тесты
@@ -81,17 +81,17 @@ dotnet test tests/FastIntegrationTests.Tests.Respawn --filter "FullyQualifiedNam
 
 **Testcontainers** (`ContainerServiceTestBase` / `ContainerApiTestBase`):
 - Один контейнер PostgreSQL **на класс** (через `IClassFixture<ContainerFixture>`).
-- Миграции применяются **один раз на класс**.
-- Между тестами — пересоздание БД через `EnsureDeleted` + `MigrateAsync`.
+- Каждый тест создаёт свою БД с уникальным именем `test_{guid}` через `TestDbFactory.CreateAsync` и применяет `MigrateAsync`. То есть **миграции на каждый тест**.
+- В `DisposeAsync` вызывается `EnsureDeletedAsync` — БД дропается.
 - TestServer и HttpClient создаются **на каждый тест**.
 
 #### Сравнение по ключевым параметрам
 
 | | IntegreSQL | Respawn | Testcontainers |
 |---|---|---|---|
-| Контейнер | 1 на процесс | 1 на процесс | 1 на класс |
-| Миграции | 1 раз (весь процесс) | 1 раз (класс) | 1 раз (класс) |
-| Сброс данных | возврат клона в пул (recreate) | DELETE по FK-порядку | EnsureDeleted + Migrate |
+| Контейнер | 1 на процесс (PG + IntegreSQL) | 1 на процесс | 1 на класс |
+| Миграции | 1 раз на процесс | 1 раз на класс | **на каждый тест** |
+| Сброс данных | возврат клона в пул (recreate) | DELETE по FK-порядку | новая БД `test_{guid}` + `MigrateAsync`, потом `EnsureDeleted` |
 | TestServer (API) | новый на каждый тест | 1 на класс | новый на каждый тест |
 | Параллелизм внутри класса | да | нет | да |
 
@@ -134,7 +134,7 @@ dotnet run --project tools/BenchmarkRunner -- -t 16 -s 50
 
 > **Важно:** константа `BaseTestCount` в `tools/BenchmarkRunner/Program.cs` — хардкод.
 > При добавлении или удалении тест-методов обновить вручную.
-> Актуальное значение: `dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --list-tests 2>/dev/null | grep -c "::"`
+> Актуальное значение: `dotnet test tests/FastIntegrationTests.Tests.IntegreSQL --list-tests 2>/dev/null | grep -c "FastIntegrationTests.Tests.IntegreSQL\."`
 
 ### Три сценария
 
@@ -187,9 +187,9 @@ tools/BenchmarkRunner/
 - **Infrastructure** — реализация репозиториев через EF Core (`Repositories/`), `ShopDbContext` с конфигурациями (`Data/`), extension-методы регистрации DI (`Extensions/ServiceCollectionExtensions.cs`).
 - **WebApi** — контроллеры (`Controllers/`), `Program.cs` с DI-конфигурацией, глобальная обработка ошибок (`Middleware/GlobalExceptionHandler.cs`).
 - **Tests.Shared** (`tests/FastIntegrationTests.Tests.Shared/`) — общая инфраструктура для всех трёх подходов: `TestWebApplicationFactory` (ASP.NET Core тест-сервер с подменой строки подключения).
-- **Tests.IntegreSQL** (`tests/FastIntegrationTests.Tests.IntegreSQL/`) — интеграционные тесты через IntegreSQL. Инфраструктура: `AppServiceTestBase`, `ComponentTestBase`, `IntegreSQL/` (менеджер контейнеров). Тест-классы в папках по сущностям: `Categories/`, `Customers/`, `Discounts/`, `Orders/`, `Products/`, `Reviews/`, `Suppliers/` — по 4 класса на сущность (`*CrTests`, `*UdTests` для сервисного и HTTP уровней).
-- **Tests.Respawn** (`tests/FastIntegrationTests.Tests.Respawn/`) — интеграционные тесты через Respawn. Инфраструктура: `RespawnServiceTestBase`, `RespawnApiTestBase`, `RespawnFixture`, `RespawnApiFixture`. Та же структура тест-классов.
-- **Tests.Testcontainers** (`tests/FastIntegrationTests.Tests.Testcontainers/`) — интеграционные тесты через Testcontainers. Инфраструктура: `ContainerServiceTestBase`, `ContainerApiTestBase`, `TestDbFactory`, `ContainerFixture`. Та же структура тест-классов.
+- **Tests.IntegreSQL** (`tests/FastIntegrationTests.Tests.IntegreSQL/`) — интеграционные тесты через IntegreSQL (~195 тестов). Инфраструктура: `AppServiceTestBase`, `ComponentTestBase`, `IntegreSQL/IntegresSqlContainerManager` + `IntegresSqlDefaults` + `IntegresSqlState`. Тест-классы в папках по сущностям (`Categories/`, `Customers/`, `Discounts/`, `Orders/`, `Products/`, `Reviews/`, `Suppliers/`) — по 2 класса на сущность: `<Entity>ServiceTests` (сервисный уровень) и `<Entity>sApiTests` (HTTP-уровень). Итого 14 базовых классов на проект.
+- **Tests.Respawn** (`tests/FastIntegrationTests.Tests.Respawn/`) — интеграционные тесты через Respawn (~195 тестов). Инфраструктура: `RespawnServiceTestBase`, `RespawnApiTestBase`, `RespawnFixture`, `RespawnApiFixture`. Те же 7 папок и 14 классов с суффиксом `Respawn`: `<Entity>ServiceRespawnTests`, `<Entity>sApiRespawnTests`.
+- **Tests.Testcontainers** (`tests/FastIntegrationTests.Tests.Testcontainers/`) — интеграционные тесты через Testcontainers (~195 тестов). Инфраструктура: `ServiceTestBase`, `ApiTestBase` (общая логика), `ContainerServiceTestBase`, `ContainerApiTestBase` (объявляют `IClassFixture<ContainerFixture>`), `ContainerFixture`, `TestDbFactory`. Те же 7 папок и 14 классов с суффиксом `Container`: `<Entity>ServiceContainerTests`, `<Entity>sApiContainerTests`.
 
 ## Локальная разработка
 
@@ -246,3 +246,20 @@ cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/Fast
 **Неявные различия которые не падают но дают неверный результат:**
 - Сортировка строк: PostgreSQL чувствителен к collation, SQLite — нет; `ORDER BY name` может вернуть другой порядок
 - `LIKE '%foo%'` на PostgreSQL чувствителен к регистру, на SQLite — нет по умолчанию
+
+### Инфраструктура для NUnit-тестов
+
+Сейчас все три подхода (IntegreSQL / Respawn / Testcontainers) реализованы только для xUnit. У NUnit другая модель фикстур и параллелизма — стоит сделать параллельную инфраструктуру, чтобы:
+
+- Показать на докладе, что подходы фреймворк-агностичные — это не свойство xUnit.
+- Сравнить накладные расходы фреймворков на одинаковом наборе тестов (xUnit vs NUnit на тех же сценариях бенчмарка).
+- Дать готовые шаблоны командам, которые сидят на NUnit и не хотят мигрировать.
+
+**Что адаптировать:**
+- Process-level инициализация (IntegreSQL `static Lazy`) → `[SetUpFixture]` с `[OneTimeSetUp]`.
+- Class-level фикстуры (Respawn, Testcontainers) → `[OneTimeSetUp]` / `[OneTimeTearDown]` внутри тест-класса.
+- Per-test reset (Respawn `ResetAsync`, IntegreSQL clone) → `[SetUp]` / `[TearDown]`.
+- Параллелизм: `[Parallelizable(ParallelScope.All)]` + `LevelOfParallelism` в `AssemblyInfo`.
+- `TestWebApplicationFactory` фреймворк-агностичен — переиспользуется как есть.
+
+**Что добавить в бенчмарк:** ещё три проекта (`*.Tests.NUnit.IntegreSQL/Respawn/Testcontainers`) и три PowerShell-скрипта; в `BenchmarkRunner` — отдельная серия точек данных или отдельный сценарий «xUnit vs NUnit».
