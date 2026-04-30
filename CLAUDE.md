@@ -72,6 +72,7 @@ dotnet test tests/FastIntegrationTests.Tests.TestcontainersShared --filter "Full
 - Миграции применяются **один раз** как шаблонная БД `"shop-default"`.
 - Каждый тест получает **клон шаблона** и после завершения возвращает его в пул с пометкой «пересоздать» (`DropDatabaseOnRemove=true`).
 - Тесты полностью изолированы — параллелизм внутри класса возможен.
+- Если бенчмарк IntegreSQL падает на больших scale (s=50+) с массой `Npgsql EndOfStream` — скорее всего disk-троттлинг под массой `CREATE DATABASE TEMPLATE`. В `IntegresSqlContainerManager.cs` рядом с `pgContainer` закомментирован `WithTmpfsMount("/var/lib/postgresql/data")` — расскоментируй и попробуй (PostgreSQL data-каталог уезжает в RAM, ~1–1.5 GB).
 
 **Respawn** (`RespawnServiceTestBase` / `RespawnApiTestBase`):
 - Один контейнер PostgreSQL **на весь процесс** — `RespawnContainerManager` (static Lazy).

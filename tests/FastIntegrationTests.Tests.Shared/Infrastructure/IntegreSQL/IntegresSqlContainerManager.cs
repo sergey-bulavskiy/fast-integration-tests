@@ -37,6 +37,29 @@ public static class IntegresSqlContainerManager
         var network = new NetworkBuilder().Build();
         await network.CreateAsync();
 
+        // ── Опциональный tmpfs для data-каталога PostgreSQL ──────────────────────────
+        // Если на твоей машине бенчмарк IntegreSQL падает массой Npgsql `EndOfStream`
+        // на больших scale (s=50+), а disk latency в момент падения уходит в полку —
+        // расскоментируй WithTmpfsMount ниже.
+        //
+        // Симптом: ~thousands × `Npgsql.NpgsqlException : Exception while reading
+        // from stream` → inner `EndOfStreamException : Attempted to read past the
+        // end of the stream`. Стек у всех — на стадии `NpgsqlConnection.Open`
+        // внутри `WaitUntilDatabaseIsCreated` или первого запроса EF.
+        //
+        // Причина: при scale=50 за один прогон делается ~9800 CREATE DATABASE
+        // TEMPLATE. Это синхронные filesystem-операции — fsync=off их не ускоряет
+        // (он отключает только sync для WAL, а не для data-файлов). На медленном
+        // или троттлящемся диске PostgreSQL держит ACCESS EXCLUSIVE lock на
+        // pg_database дольше Npgsql Connection Timeout (15с) — параллельные
+        // коннекты ловят TCP RST на Open.
+        //
+        // Решение: tmpfs кладёт data-файлы в page cache (RAM). CREATE DATABASE
+        // становится memcpy. Стоит ~1–1.5 GB RAM при scale=50; данные эфемерны
+        // (контейнер уничтожается между прогонами) — для тестов это безопасно.
+        //
+        // Подробнее: docs/superpowers/specs/2026-04-30-postgres-tmpfs-toggle-design.md
+
         // Параметры производительности PostgreSQL для тестовой среды.
         // Рекомендованы авторами IntegreSQL в официальном docker-compose.yml:
         // https://github.com/allaboutapps/integresql/blob/master/README.md
@@ -45,6 +68,7 @@ public static class IntegresSqlContainerManager
         // ⚠ НИКОГДА не переносить в продакшн — при сбое питания/краше возможна потеря данных.
         var pgContainer = new PostgreSqlBuilder()
             .WithImage("postgres:16-alpine")
+            // .WithTmpfsMount("/var/lib/postgresql/data")  // см. блок-комментарий выше
             .WithNetwork(network)
             .WithNetworkAliases("postgres")
             .WithCommand(
