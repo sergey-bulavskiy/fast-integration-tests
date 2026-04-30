@@ -276,3 +276,13 @@ cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/Fast
 - `TestWebApplicationFactory` фреймворк-агностичен — переиспользуется как есть.
 
 **Что добавить в бенчмарк:** ещё три проекта (`*.Tests.NUnit.IntegreSQL/Respawn/Testcontainers`) и три PowerShell-скрипта; в `BenchmarkRunner` — отдельная серия точек данных или отдельный сценарий «xUnit vs NUnit».
+
+### Пересмотреть логику warmup в BenchmarkRunner
+
+Сейчас перед Сценарием 1 запускается warmup по всем 4 подходам. Для IntegreSQL и Respawn это имеет смысл: прогрев JIT и Docker-образов (pull, если ещё нет) даёт чистую первую точку данных. Но для Testcontainers и TestcontainersShared каждый `dotnet test` — новый процесс с новым контейнером, который поднимается и сносится с нуля. Warmup-прогон ничего не прогревает для следующего процесса, поэтому первая реальная точка данных (m=17) всё равно будет «холодной» — так же, как если бы warmup не было.
+
+Варианты для анализа:
+- Убрать warmup для Testcontainers/TestcontainersShared совсем — первая точка всё равно холодная.
+- Сделать warmup только для IntegreSQL и Respawn (которые держат контейнер на весь процесс runner'а — warmup им не поможет тоже, контейнер в тестах поднимается в отдельном `dotnet test` процессе).
+- Понять, что вообще даёт warmup: возможно, он нужен только для прогрева Docker image cache, и тогда достаточно одного прогона любого подхода (первым идёт IntegreSQL — он уже всё прогреет для остальных через общий Docker daemon).
+- Разобраться, нет ли двойного эффекта: `WaitForRyukToStop` + cooldown уже добавляют паузу после каждого прогона, а warmup — это дополнительный «нулевой» прогон сверху.
