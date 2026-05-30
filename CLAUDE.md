@@ -236,7 +236,16 @@ cp src/FastIntegrationTests.WebApi/appsettings.Development.json.example src/Fast
 > Stacked bar chart в отчёте показывает состав времени при 17 и 117 миграциях.
 > Инструментирование через `##BENCH[migration]=` и `##BENCH[reset]=` в stdout тест-инфраструктуры.
 
-### Тесты, которые падают на InMemory и SQLite
+### ~~Тесты, которые падают на InMemory и SQLite~~ ✓ Реализовано
+
+> Реализовано в `tests/FastIntegrationTests.Tests.Demo.WhyRealDb/` (спека:
+> `docs/superpowers/specs/2026-05-30-why-real-db-demo-design.md`).
+> 17 намеренно-красных демо-тестов в трёх папках (`Mock/`, `InMemory/`, `Sqlite/`):
+> у мока нет состояния и выполнения запросов; InMemory не enforce'ит UNIQUE/FK/Restrict/транзакции
+> и не выполняет raw SQL; SQLite расходится по диалекту (LIKE, decimal, коллация, TIMESTAMPTZ,
+> string_agg) и не применяет raw-SQL миграции (триггер PriceHistory). Docker не нужен.
+> Запуск: `dotnet test tests/FastIntegrationTests.Tests.Demo.WhyRealDb`. Проект изолирован
+> (нет .sln, не виден BenchmarkRunner). Тесты ОБЯЗАНЫ быть красными — см. README проекта.
 
 Отдельный класс тестов для демонстрации того, зачем вообще нужна реальная БД.
 Каждый тест должен проходить на PostgreSQL и падать (или давать неверный результат) на EF Core InMemory / SQLite.
