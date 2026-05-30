@@ -1,0 +1,11 @@
+global using FastIntegrationTests.Application.DTOs;
+global using FastIntegrationTests.Application.Entities;
+global using FastIntegrationTests.Application.Enums;
+global using FastIntegrationTests.Application.Exceptions;
+global using FastIntegrationTests.Application.Interfaces;
+global using FastIntegrationTests.Application.Services;
+global using FastIntegrationTests.Infrastructure.Data;
+global using FastIntegrationTests.Infrastructure.Repositories;
+global using Microsoft.EntityFrameworkCore;
+global using Moq;
+global using Xunit;
